@@ -43,7 +43,8 @@ module check_time_and_coin(i_input_coin,i_select_item,i_trigger_return,coin_valu
 
 	always @(wait_time) begin
 		// o_return_coin
-		if (wait_time == 0 || i_trigger_return == 1) begin
+		o_return_coin = `kTotalBits'd0;
+		if ($signed(wait_time) <= 0 || i_trigger_return == 1) begin
 			_tmp_return = 0;
 			for(i=`kNumCoins-1; i>=0; i=i-1) begin
 				if(coin_value[i] <= balance_total - _tmp_return) begin
