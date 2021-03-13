@@ -47,6 +47,10 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 					if(i_input_coin[i] == 1) begin
 						input_total = input_total + coin_value[i];
 					end
+
+					if(o_return_coin[i] == 1) begin
+						return_total = return_total + coin_value[i];
+					end
 				end
 			end
 
