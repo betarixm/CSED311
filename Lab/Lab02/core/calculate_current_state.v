@@ -17,7 +17,11 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 	output reg  [`kTotalBits-1:0] input_total, output_total, return_total,current_total_nxt;
 	integer i;	
 
-
+	initial begin
+		input_total = 0;
+		output_total = 0;
+		return_total = 0;
+	end
 
 	
 	// Combinational logic for the next states
@@ -41,7 +45,7 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 		o_output_item = `kNumItems'd0;
 		o_available_item = `kNumItems'd0;
 
-		case(current_total) begin
+		case(current_total)
 			`STATE_MONEY: begin
 				for(i=0; i < `kNumCoins; i = i + 1) begin
 					if(i_input_coin[i] == 1) begin
