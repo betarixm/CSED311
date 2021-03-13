@@ -15,6 +15,7 @@ module check_time_and_coin(i_input_coin,i_select_item,i_trigger_return,coin_valu
 	output reg  [`kNumCoins-1:0] o_return_coin;
 	output reg [31:0] wait_time;
 	integer i;
+	integer _tmp_return;
 
 	// initiate values
 	initial begin
@@ -41,11 +42,13 @@ module check_time_and_coin(i_input_coin,i_select_item,i_trigger_return,coin_valu
 	end
 
 	always @(wait_time) begin
-		// TODO: o_return_coin
+		// o_return_coin
 		if (wait_time == 0 || i_trigger_return == 1) begin
+			_tmp_return = 0;
 			for(i=`kNumCoins-1; i>=0; i=i-1) begin
-				if(coin_value[i] <= balance_total) begin
+				if(coin_value[i] <= balance_total - _tmp_return) begin
 					o_return_coin[i] = 1;
+					_tmp_return = _tmp_return + coin_value[i];
 				end
 			end
 		end
