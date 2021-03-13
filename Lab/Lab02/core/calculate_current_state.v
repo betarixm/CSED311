@@ -25,7 +25,7 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 		// TODO: current_total_nxt
 		// You don't have to worry about concurrent activations in each input vector (or array).
 		// Calculate the next current_total state.
-		if(i_select_item || i_select_item) begin
+		if(i_select_item) begin
 			current_total_nxt = `STATE_ITEM;
 		end else if (o_output_item) begin
 			current_total_nxt = `STATE_MONEY;
