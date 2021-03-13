@@ -56,6 +56,12 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 						return_total = return_total + coin_value[i];
 					end
 				end
+
+				for(i=0; i < `kNumItems; i = i + 1) begin
+					if((input_total - return_total - output_total) <= item_price[i]) begin
+						o_available_item[i] = 1;
+					end
+				end
 			end
 
 			`STATE_ITEM: begin
