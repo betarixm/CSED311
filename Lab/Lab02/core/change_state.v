@@ -11,14 +11,14 @@ module change_state(clk,reset_n,current_total_nxt,current_total);
 	
 	// initiate values
 	initial begin
-		current_total <= `STATE_MONEY;
+		current_total <= `STATE_INIT;
 	end
 	
 	// Sequential circuit to reset or update the states
 	always @(posedge clk ) begin
 		if (!reset_n) begin
 			// reset all states.
-			current_total <= `STATE_MONEY;
+			current_total <= `STATE_INIT;
 		end
 		else begin
 			// update all states.

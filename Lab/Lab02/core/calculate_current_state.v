@@ -22,21 +22,23 @@ input_total, output_total, return_total, balance_total, current_total_nxt,wait_t
 		input_total <= 0;
 		output_total <= 0;
 		return_total <= 0;
-		current_total_nxt <= `STATE_MONEY;
+		current_total_nxt <= `STATE_INIT;
 	end
 
 	assign balance_total = input_total - output_total - return_total;
 
 	
 	// Combinational logic for the next states
-	always @(i_select_item or o_output_item) begin
+	always @(i_input_coin or i_select_item) begin
 		// TODO: current_total_nxt
 		// You don't have to worry about concurrent activations in each input vector (or array).
 		// Calculate the next current_total state.
-		if(i_select_item) begin
-			current_total_nxt = `STATE_ITEM;
-		end else if (o_output_item) begin
+		if(i_input_coin) begin
 			current_total_nxt = `STATE_MONEY;
+		end else if (i_select_item) begin
+			current_total_nxt = `STATE_ITEM;
+		end else begin
+			current_total_nxt = `STATE_IDLE;
 		end
 	end
 
@@ -44,31 +46,38 @@ input_total, output_total, return_total, balance_total, current_total_nxt,wait_t
 	
 	// Combinational logic for the outputs
 	always @(current_total or i_input_coin or o_return_coin or i_select_item) begin
-		// TODO: o_available_item
-		// TODO: o_output_item
-		o_output_item = `kNumItems'd0;
-		o_available_item = `kNumItems'd0;
+		// o_available_item
+		// o_output_item
 
 		case(current_total)
+			`STATE_INIT: begin
+				input_total = 0;
+				output_total = 0;
+				return_total = 0;
+			end
+
+			`STATE_IDLE: begin
+				o_available_item = `kNumItems'd0;
+				for(i=0; i < `kNumItems; i = i + 1) begin
+					if(item_price[i] <= balance_total) begin
+						o_available_item[i] = 1;
+					end
+					if(o_return_coin[i] == 1) begin
+						return_total = return_total + coin_value[i];
+					end
+				end
+			end
+
 			`STATE_MONEY: begin
 				for(i=0; i < `kNumCoins; i = i + 1) begin
 					if(i_input_coin[i] == 1) begin
 						input_total = input_total + coin_value[i];
 					end
-
-					if(o_return_coin[i] == 1) begin
-						return_total = return_total + coin_value[i];
-					end
-				end
-
-				for(i=0; i < `kNumItems; i = i + 1) begin
-					if(item_price[i] <= balance_total) begin
-						o_available_item[i] = 1;
-					end
 				end
 			end
 
 			`STATE_ITEM: begin
+				o_output_item = `kNumItems'd0;
 				for(i = 0; i < `kNumItems; i = i + 1) begin
 					if(i_select_item[i] == 1 && item_price[i] <= balance_total) begin
 						o_output_item[i] = 1;
