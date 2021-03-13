@@ -56,8 +56,9 @@ input_total, output_total, return_total,current_total_nxt,wait_time,o_return_coi
 
 			`STATE_ITEM: begin
 				for(i = 0; i < `kNumItems; i = i + 1) begin
-					if(i_select_item[i] == 1 && (input_total - return_total) <= item_price) begin
+					if(i_select_item[i] == 1 && (input_total - return_total - output_total) <= item_price[i]) begin
 						o_output_item[i] = 1;
+						output_total = output_total + item_price[i];
 					end
 				end
 			end
