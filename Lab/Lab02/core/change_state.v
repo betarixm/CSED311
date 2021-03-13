@@ -1,4 +1,5 @@
 `include "vending_machine_def.v"
+`include "state_def.v"
 
 
 module change_state(clk,reset_n,current_total_nxt,current_total);
@@ -8,13 +9,20 @@ module change_state(clk,reset_n,current_total_nxt,current_total);
 	input [`kTotalBits-1:0] current_total_nxt;
 	output reg [`kTotalBits-1:0] current_total;
 	
+	// initiate values
+	initial begin
+		current_total <= `STATE_MONEY;
+	end
+	
 	// Sequential circuit to reset or update the states
 	always @(posedge clk ) begin
 		if (!reset_n) begin
-			// TODO: reset all states.
+			// reset all states.
+			current_total <= `STATE_MONEY;
 		end
 		else begin
-			// TODO: update all states.
+			// update all states.
+			current_total <= current_total_nxt;
 		end
 	end
 endmodule 
