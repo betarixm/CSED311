@@ -62,6 +62,10 @@ input_total, output_total, return_total, balance_total, current_total_nxt,wait_t
 					if(item_price[i] <= balance_total) begin
 						o_available_item[i] = 1;
 					end
+
+				end
+
+				for(i=0; i < `kNumCoins; i = i + 1) begin
 					if(o_return_coin[i] == 1) begin
 						return_total = return_total + coin_value[i];
 					end
