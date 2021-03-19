@@ -37,5 +37,7 @@
 `define INST_FUNC_JPR 6'd25
 `define INST_FUNC_JRL 6'd26
 
-`define	WORD_SIZE	16			
+
+`define	WORD_SIZE	16
+`define IMMD_SIZE   8
 `define	NUM_REGS	4
