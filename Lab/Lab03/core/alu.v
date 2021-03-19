@@ -16,8 +16,8 @@ module alu (alu_input_1, alu_input_2, func_code, alu_output);
 			`FUNC_ORR: alu_output = alu_input_1 | alu_input_2;
 			`FUNC_NOT: alu_output = ~alu_input_1;
 			`FUNC_TCP: alu_output = ~alu_input_1 + 1;
-			`FUNC_SHL: alu_output = $signed(alu_input_1) << 1;
-			`FUNC_SHR: alu_output = $signed(alu_input_1) >> 1;
+			`FUNC_SHL: alu_output = $signed(alu_input_1) << alu_input_2;
+			`FUNC_SHR: alu_output = $signed(alu_input_1) >> alu_input_2;
 		endcase
 	end
 

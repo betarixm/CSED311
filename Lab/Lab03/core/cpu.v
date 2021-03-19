@@ -1,4 +1,9 @@
-`include "opcodes.v" 	   
+`include "opcodes.v"
+`include "alu.v" 	
+`include "adder.v"
+`include "sign_extender.v"
+`include "register_file.v"
+`include "mux.v"   
 
 module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	output readM;									
