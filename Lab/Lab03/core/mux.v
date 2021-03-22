@@ -1,3 +1,5 @@
+`include "opcodes.v"
+
 module mux (mux_input_1, mux_input_2, selector, mux_output);
 	input [`NumBits-1:0] mux_input_1;
 	input [`NumBits-1:0] mux_input_2;
