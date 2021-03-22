@@ -14,5 +14,19 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	input inputReady;								
 	input reset_n;									
 	input clk;			
-																																					  
+
+	wire Instruction[31:0];
+
+    wire ALUSrc;
+    wire [3-1:0] ALUOp;
+    wire RegWrite;
+    wire MemRead;
+    wire MemtoReg;
+    wire MemWrite;
+    wire PCtoReg;
+    wire Jump;
+    wire Branch;
+	
+	control_unit MainControl(Instruction, ALUSrc, ALUOp, RegWrite, MemRead, MemtoReg, MemWrite, PCtoReg, Jump, Branch);
+
 endmodule							  																		  
