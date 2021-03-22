@@ -32,7 +32,11 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	wire [`WORD_SIZE-1:0] WriteData;
 
+	wire [`WORD_SIZE-1:0] WireSignExtendOut
+
 	control_unit MainControl(Instruction, ALUSrc, ALUOp, RegWrite, MemRead, MemtoReg, MemWrite, PCtoReg, Jump, Branch);
 	register_file Registers(ReadData1, ReadData2, Instruction[11:10], Instruction[9:8], Instruction[7:6], WriteData, RegWrite, clk);
 
+	sign_extender SignExtend(Instruction, WireSignExtendOut);
+	
 endmodule							  																		  
