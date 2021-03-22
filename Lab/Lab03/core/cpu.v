@@ -15,7 +15,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	input reset_n;									
 	input clk;			
 
-	wire Instruction[`WORD_SIZE-1:0];
+	wire Instruction[15:0];
 
     wire ALUSrc;
     wire [3-1:0] ALUOp;
