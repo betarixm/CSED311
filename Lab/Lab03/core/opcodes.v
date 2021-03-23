@@ -41,5 +41,3 @@
 `define	WORD_SIZE	16
 `define IMMD_SIZE   8
 `define	NUM_REGS	4
-
-`define	NumBits	16
