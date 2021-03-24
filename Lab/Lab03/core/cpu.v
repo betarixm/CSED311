@@ -1,10 +1,13 @@
 `include "opcodes.v"
+`include "registers.v"
+
 `include "alu.v" 	
 `include "adder.v"
 `include "sign_extender.v"
 `include "register_file.v"
 `include "pc_calculator.v"
 `include "mux.v"   
+
 
 module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	output readM;									
@@ -35,6 +38,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	wire [`WORD_SIZE-1:0] ReadData1;
 	wire [`WORD_SIZE-1:0] ReadData2;
 
+	wire [`WORD_SIZE-1:0] WriteReg;
 	wire [`WORD_SIZE-1:0] WriteData;
 	wire [`WORD_SIZE-1:0] WriteDataValue;
 
@@ -68,6 +72,11 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.jp(Jump), 
 							.branch(Branch));
 
+	mux MuxWriteReg(.mux_input1(Instruction[7:6]),
+					.mux_input2(`R2),
+					.selector(PCtoReg),
+					.mux_output(WriteReg));
+
 	mux MuxWriteData(.mux_input_1(WriteDataValue),
 					.mux_input_2(NextPC),
 					.selector(PCtoReg),
@@ -77,7 +86,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.read_out2(ReadData2), 
 							.read1(Instruction[11:10]), 
 							.read2(Instruction[9:8]), 
-							.write_reg(Instruction[7:6]), 
+							.write_reg(WriteReg), 
 							.write_data(WriteData), 
 							.reg_write(RegWrite), 
 							.clk(clk));
