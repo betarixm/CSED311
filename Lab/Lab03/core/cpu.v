@@ -3,6 +3,7 @@
 `include "adder.v"
 `include "sign_extender.v"
 `include "register_file.v"
+`include "pc_calculator.v"
 `include "mux.v"   
 
 module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
@@ -17,6 +18,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	reg [`WORD_SIZE-1:0] PC;
 	wire [`WORD_SIZE-1:0] NextPC;
+	wire [`WORD_SIZE-1:0] RealNextPC;
 
 	wire Instruction[15:0];
 
@@ -43,9 +45,17 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	wire [`WORD_SIZE-1:0] ReadDataMemory;
 
-	adder AdderNextPC(.adder_input1(PC),
-					.adder_input2(1),
-					.adder_output(NextPC));
+
+	pc_calculator PCCalculator(.pc(PC),
+							.branch_cond(BranchCond),
+							.branch(Branch),
+							.jump(Jump),
+							.sign_extended(WireSignExtendOut),
+							.target_offset(Instruction[`ADDR_SIZE-1:0]),
+							.write_pc_reg(ReadData1),
+							.next_pc(NextPC),
+							.real_next_pc(RealNextPC));
+
 
 	control_unit MainControl(.instr(Instruction), 
 							.alu_src(ALUSrc), 

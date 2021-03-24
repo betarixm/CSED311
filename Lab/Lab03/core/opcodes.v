@@ -39,5 +39,6 @@
 
 
 `define	WORD_SIZE	16
+`define	ADDR_SIZE	12
 `define IMMD_SIZE   8
 `define	NUM_REGS	4
