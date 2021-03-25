@@ -5,7 +5,7 @@ module data_memory (address, write_data, ackOutput, inputReady, data, read_data,
     input [`WORD_SIZE-1:0] write_data;
     input ackOutput;
     input inputReady;
-    inout [`WORD_SIZE-1:0] data;
+    inout wire [`WORD_SIZE-1:0] data;
     output reg readM;
     output reg writeM;
     output reg [`WORD_SIZE-1:0] address_out;
@@ -17,10 +17,11 @@ module data_memory (address, write_data, ackOutput, inputReady, data, read_data,
 
     input clk;
 
+    assign data = (mem_write == 1) ? write_data: 'bz;
+
     always @(negedge clk) begin
         if (mem_write == 1) begin
             address_out <= address;
-            data <= write_data;
             writeM <= 1;
         end
         else if (mem_read == 1) begin
