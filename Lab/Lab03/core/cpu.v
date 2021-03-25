@@ -50,7 +50,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	wire [`WORD_SIZE-1:0] ReadDataMemory;
 
 	always @(posedge clk) begin
-		PC <= RealNextPc;
+		PC <= RealNextPC;
 	end
 
     instruction_memory InstructionMemory(.read_address(PC),
