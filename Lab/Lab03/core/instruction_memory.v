@@ -4,8 +4,8 @@ module instruction_memory (read_address, inputReady, data, readM, instruction, c
     input read_address;
     input inputReady;
     inout wire [`WORD_SIZE-1:0] data;
-    output readM;
-    output [`WORD_SIZE-1:0] instruction;
+    output reg readM;
+    output reg [`WORD_SIZE-1:0] instruction;
 
     input clk;
 
