@@ -9,7 +9,7 @@ module instruction_memory (read_address, inputReady, data, readM, instruction, c
 
     input clk;
 
-    wire fetch_instruction;
+    reg fetch_instruction;
 
 
     always @(posedge clk) begin
