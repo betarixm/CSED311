@@ -23,7 +23,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	wire [`WORD_SIZE-1:0] NextPC;
 	wire [`WORD_SIZE-1:0] RealNextPC;
 
-	wire Instruction[15:0];
+	wire [15:0] Instruction;
 
     wire ALUSrc;
     wire [3-1:0] ALUOp;
