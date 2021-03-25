@@ -49,8 +49,16 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	wire [`WORD_SIZE-1:0] ReadDataMemory;
 
+	always @(posedge clk) begin
+		PC <= RealNextPc;
+	end
 
-	pc_calculator PCCalculator(.pc(PC),
+    instruction_memory InstructionMemory(.read_address(PC),
+										.readM(readM),
+										.instruction(Instruction),
+										.clk(clk));
+
+    pc_calculator PCCalculator(.pc(PC),
 							.branch_cond(BranchCond),
 							.branch(Branch),
 							.jump(Jump),
