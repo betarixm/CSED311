@@ -14,24 +14,22 @@ module instruction_memory (read_address, inputReady, data, readM, address_out, i
     reg [`WORD_SIZE-1:0] _instruction;
 
     initial begin
-        fetch_instruction <= 1;
+        fetch_instruction <= 0;
     end
 
     assign readM = fetch_instruction == 1 ? 1 : readM;
-    assign data = fetch_instruction == 1 && inputReady == 1 ? `WORD_SIZE'bz : data;
-    assign instruction = _instruction;
+    assign data = (fetch_instruction == 1 && inputReady == 1) ? `WORD_SIZE'bz : data;
     assign address_out = read_address;
+    assign instruction = _instruction;
 
     always @(posedge clk) begin
-        
+        fetch_instruction <= 1;
     end
 
     always @(*) begin
-        if (fetch_instruction == 1) begin
-            if (inputReady == 1) begin
-                fetch_instruction = 0;
-                _instruction = data;
-            end
+        if (fetch_instruction == 1 && inputReady == 1) begin
+            fetch_instruction = 0;
+            _instruction = data;
         end
     end
 
