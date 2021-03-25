@@ -20,8 +20,8 @@ module data_memory (address, write_data, ackOutput, inputReady, data, read_data,
     assign data = (mem_write == 1) ? write_data: 'bz;
 
     initial begin
-        readM <= 0;
-        writeM <=0;
+        readM = 0;
+        writeM =0;
     end
 
     always @(negedge clk) begin
