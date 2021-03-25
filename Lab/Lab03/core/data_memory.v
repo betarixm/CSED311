@@ -17,12 +17,8 @@ module data_memory (address, write_data, ackOutput, inputReady, data, read_data,
 
     input clk;
 
-    assign data = (mem_write == 1) ? write_data: 'bz;
+    assign data = (mem_write == 1) ? write_data: `WORD_SIZE'bz;
 
-    initial begin
-        readM = 0;
-        writeM =0;
-    end
 
     always @(negedge clk) begin
         if (mem_write == 1) begin

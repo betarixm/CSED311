@@ -49,14 +49,15 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	wire [`WORD_SIZE-1:0] ReadDataMemory;
 
-	always @(posedge clk) begin
-		PC <= RealNextPC;
+	initial begin
+		PC <= 0;
 	end
 
     instruction_memory InstructionMemory(.read_address(PC),
 										.readM(readM),
 										.inputReady(inputReady),
 										.data(data),
+										.address_out(address),
 										.instruction(Instruction),
 										.clk(clk));
 
@@ -114,7 +115,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 			.alu_input_2(WireMuxALUOut), 
 			.func_code(ALUOp), 
 			.alu_output(WireALUOut));
-
+/*
 	data_memory DataMemory(.address(WireALUOut),
 						.write_data(ReadData2),
 						.ackOutput(ackOutput),
@@ -126,7 +127,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 						.read_data(ReadDataMemory),
 						.mem_write(MemWrite),
 						.mem_read(MemRead),
-						.clk(clk));
+						.clk(clk));*/
 
 	mux MuxWriteDataValue(.mux_input_1(WireALUOut),
 						.mux_input_2(ReadDataMemory),
