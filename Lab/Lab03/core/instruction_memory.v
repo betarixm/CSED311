@@ -1,7 +1,7 @@
 `include "opcodes.v" 	   
 
 module instruction_memory (read_address, inputReady, data, readM, instruction, clk);
-    input read_address;
+    input [`WORD_SIZE-1:0] read_address;
     input inputReady;
     inout wire [`WORD_SIZE-1:0] data;
     output reg readM;
