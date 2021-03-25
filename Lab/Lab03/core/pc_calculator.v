@@ -18,11 +18,12 @@ module pc_calculator (pc, branch_cond, branch, jump, sign_extended, target_offse
     wire [`WORD_SIZE-1:0] jump_target_address;
     wire [`WORD_SIZE-1:0] branch_address;
 
+    reg [`WORD_SIZE-1:0] offset = 1;
 
     assign jump_target_address = {pc[`WORD_SIZE-1:`ADDR_SIZE],target_offset};
 
 	adder AdderNextPC(.adder_input1(pc),
-					.adder_input2(1),
+					.adder_input2(offset),
 					.adder_output(next_pc));
 
     adder AdderBranch(.adder_input1(pc),
