@@ -26,7 +26,7 @@ module pc_calculator (pc, branch_cond, branch, jump, sign_extended, target_offse
 					.adder_output(next_pc));
 
     adder AdderBranch(.adder_input1(pc),
-                    .adder_inpu2(sign_extended),
+                    .adder_input2(sign_extended),
                     .adder_output(branch_address));
 
     mux MuxBranch(.mux_input_1(next_pc),
