@@ -44,7 +44,7 @@ module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, me
                 isItype = 1;
             end
             `ADI_OP: alu_op = `FUNC_ADD;
-            `ORI_OP: alu_op = `FUNC_OR;
+            `ORI_OP: alu_op = `FUNC_ORR;
             `LHI_OP: alu_op = `FUNC_SHL;
 
             `LWD_OP: begin
