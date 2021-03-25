@@ -29,12 +29,12 @@ module pc_calculator (pc, branch_cond, branch, jump, sign_extended, target_offse
                     .adder_inpu2(sign_extended),
                     .adder_output(branch_address));
 
-    mux MuxBranch(.mux_input1(next_pc),
+    mux MuxBranch(.mux_input_1(next_pc),
                 .mux_input2(branch_address),
                 .selector(branch && branch_cond),
                 .mux_output(before_mux_jump));
 
-    mux MuxJump(.mux_input1(jump_target_address),
+    mux MuxJump(.mux_input_1(jump_target_address),
                 .mux_input2(before_mux_jump),
                 .selector(jump),
                 .mux_output(real_next_pc));
