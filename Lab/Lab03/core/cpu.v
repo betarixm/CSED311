@@ -115,7 +115,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 						.address_out(address),
 						.read_data(ReadDataMemory),
 						.mem_write(MemWrite),
-						.mem_read(MemRead));
+						.mem_read(MemRead),
+						.clk(clk));
 
 	mux MuxWriteDataValue(.mux_input_1(WireALUOut),
 						.mux_input_2(ReadDataMemory),

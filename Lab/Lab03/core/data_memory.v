@@ -1,8 +1,8 @@
 `include "opcodes.v"
 
-module data_memory (address, write_data, ackOutput, inputReady, data, read_data, readM, writeM, address_out, mem_write, mem_read);
-	input [`WORD_SIZE-1:0] address;
-	input [`WORD_SIZE-1:0] write_data;
+module data_memory (address, write_data, ackOutput, inputReady, data, read_data, readM, writeM, address_out, mem_write, mem_read, clk);
+    input [`WORD_SIZE-1:0] address;
+    input [`WORD_SIZE-1:0] write_data;
     input ackOutput;
     input inputReady;
     inout [`WORD_SIZE-1:0] data;
@@ -10,20 +10,22 @@ module data_memory (address, write_data, ackOutput, inputReady, data, read_data,
     output writeM;
     output [`WORD_SIZE-1:0] address_out;
 
-	output [`WORD_SIZE-1:0] read_data;
+    output [`WORD_SIZE-1:0] read_data;
     
     input mem_write;
     input mem_read;
 
-    always @(*) begin
+    input clk;
+
+    always @(negedge clk) begin
         if (mem_write == 1) begin
-            address_out = address;
-            data = write_data;
-            writeM = 1;
+            address_out <= address;
+            data <= write_data;
+            writeM <= 1;
         end
         else if (mem_read == 1) begin
-            address_out = address;
-            readM = 1;
+            address_out <= address;
+            readM <= 1;
         end
     end
 
