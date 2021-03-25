@@ -13,7 +13,7 @@ module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, me
     output reg branch;
 
     reg isItype;
-    wire isStore;
+    reg isStore;
     wire isLoad;
     wire isBR;
 
