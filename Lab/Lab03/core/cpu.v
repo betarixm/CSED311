@@ -82,8 +82,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.jp(Jump), 
 							.branch(Branch));
 
-	mux MuxWriteReg(.mux_input1(Instruction[7:6]),
-					.mux_input2(`R2),
+	mux MuxWriteReg(.mux_input_1(Instruction[7:6]),
+					.mux_input_2(`R2),
 					.selector(PCtoReg),
 					.mux_output(WriteReg));
 
