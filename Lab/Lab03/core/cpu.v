@@ -55,6 +55,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
     instruction_memory InstructionMemory(.read_address(PC),
 										.readM(readM),
+										.inputReady(inputReady),
+										.data(data),
 										.instruction(Instruction),
 										.clk(clk));
 
