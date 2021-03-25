@@ -15,7 +15,7 @@ module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, me
     reg isItype;
     reg isStore;
     reg isLoad;
-    wire isBR;
+    reg isBR;
 
     assign alu_src = isItype || isStore;
     assign reg_write = !isStore && !isBR;
