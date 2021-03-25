@@ -3,7 +3,7 @@
 module instruction_memory (read_address, inputReady, data, readM, instruction, clk);
     input [`WORD_SIZE-1:0] read_address;
     input inputReady;
-    inout wire [`WORD_SIZE-1:0] data;
+    inout [`WORD_SIZE-1:0] data;
     output reg readM;
     output reg [`WORD_SIZE-1:0] instruction;
 
