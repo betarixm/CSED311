@@ -49,8 +49,6 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	wire [`WORD_SIZE-1:0] ReadDataMemory;
 
-	wire [`WORD_SIZE-1:0] WireALUSubOut;
-
 	initial begin
 		PC <= 0;
 	end
@@ -116,8 +114,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	alu ALU(.alu_input_1(ReadData1), 
 			.alu_input_2(WireMuxALUOut), 
 			.func_code(ALUOp), 
-			.alu_output(WireALUOut),
-			.sub_output(WireALUSubOut));
+			.alu_output(WireALUOut));
 /*
 	data_memory DataMemory(.address(WireALUOut),
 						.write_data(ReadData2),
