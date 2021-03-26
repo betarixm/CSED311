@@ -7,6 +7,7 @@
 `include "register_file.v"
 `include "pc_calculator.v"
 `include "mux.v"   
+`include "branch_controller.v"
 
 
 module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
@@ -34,6 +35,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
     wire PCtoReg;
     wire Jump;
     wire Branch;
+	wire BranchCond;
 	
 	wire [`WORD_SIZE-1:0] ReadData1;
 	wire [`WORD_SIZE-1:0] ReadData2;
@@ -118,6 +120,11 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 			.func_code(ALUOp), 
 			.alu_output(WireALUOut),
 			.sub_output(WireALUSubOut));
+	
+	branch_controller BranchController(.sub_input(WireALUSubOut),
+										.opcode(Instruction[`WORD_SIZE-1:`WORD_SIZE-4]),
+										.is_branch(BranchCond));
+
 /*
 	data_memory DataMemory(.address(WireALUOut),
 						.write_data(ReadData2),
