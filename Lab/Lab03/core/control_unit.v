@@ -1,10 +1,11 @@
 `include "opcodes.v" 	   
 
-module control_unit (instr, rt_dest, alu_src, alu_op, reg_write, mem_read, mem_to_reg, mem_write, PCtoReg, jp, branch);
+module control_unit (instr, rt_dest, alu_src, alu_op, is_lhi, reg_write, mem_read, mem_to_reg, mem_write, PCtoReg, jp, branch);
     input [`WORD_SIZE-1:0] instr;
     output wire rt_dest;
     output wire alu_src;
     output reg [3-1:0] alu_op;
+    output reg is_lhi;
     output wire reg_write;
     output wire mem_read;
     output wire mem_to_reg;
@@ -33,6 +34,7 @@ module control_unit (instr, rt_dest, alu_src, alu_op, reg_write, mem_read, mem_t
         isLoad = 0;
         isBR = 0;
         jp = 0;
+        is_lhi = 0;
         case (instr[`WORD_SIZE-1:`WORD_SIZE-4]) // opcode
             `ALU_OP: begin
                 case (instr[5:0]) // func_code
@@ -53,7 +55,7 @@ module control_unit (instr, rt_dest, alu_src, alu_op, reg_write, mem_read, mem_t
                 case (instr[`WORD_SIZE-1:`WORD_SIZE-4])
                     `ADI_OP: alu_op = `FUNC_ADD;
                     `ORI_OP: alu_op = `FUNC_ORR;
-                    `LHI_OP: alu_op = `FUNC_SHL;
+                    `LHI_OP: is_lhi = 1;
                 endcase
             end
 

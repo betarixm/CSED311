@@ -48,6 +48,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	wire [`WORD_SIZE-1:0] WriteRegTemp;
 	wire [`WORD_SIZE-1:0] WriteData;
 	wire [`WORD_SIZE-1:0] WriteDataValue;
+	wire [`WORD_SIZE-1:0] WriteDataValueALU;
 
 	wire [`WORD_SIZE-1:0] WireSignExtendOut;
 	wire [`WORD_SIZE-1:0] WireMuxALUOut;
@@ -116,7 +117,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	control_unit MainControl(.instr(Instruction), 
 							.rt_dest(RTDest),
 							.alu_src(ALUSrc), 
-							.alu_op(ALUOp), 
+							.alu_op(ALUOp),
+							.is_lhi(isLHI),
 							.reg_write(RegWrite), 
 							.mem_read(MemRead), 
 							.mem_to_reg(MemtoReg), 
@@ -185,10 +187,17 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.reset_n(reset_n));
 
 
-	mux MuxWriteDataValue(.mux_input_1(WireALUOut),
+	mux MuxWriteDataValueALU(.mux_input_1(WireALUOut),
+						.mux_input_2({Instruction[`IMMD_SIZE-1:0],8'b0}),
+						.selector(isLHI),
+						.mux_output(WriteDataValueALU));
+
+
+	mux MuxWriteDataValue(.mux_input_1(WriteDataValueALU),
 						.mux_input_2(ReadDataMemory),
 						.selector(MemtoReg),
 						.mux_output(WriteDataValue));
+
 
 	memory_io MemoryIO (
 		.data(data),
