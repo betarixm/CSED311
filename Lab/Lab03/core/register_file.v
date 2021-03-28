@@ -1,7 +1,7 @@
 `include "opcodes.v"
 `include "registers.v"
 
-module register_file(read_out1, read_out2, read1, read2, write_reg, write_data, reg_write, clk); 
+module register_file(read_out1, read_out2, read1, read2, write_reg, write_data, reg_write, clk, reset_n); 
     output reg [15:0] read_out1;
     output reg [15:0] read_out2;
     input [1:0] read1;

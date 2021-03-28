@@ -69,6 +69,12 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 		R2 <= `R2;
 	end
 
+	always @(*) begin
+		if (reset_n) begin
+			PC <= 0;
+		end
+	end
+
     instruction_memory InstructionMemory(.data(DataOut),
 										.address_in(PC),
 										.address_out(FetchAddress),
@@ -115,7 +121,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.write_reg(WriteReg), 
 							.write_data(WriteData), 
 							.reg_write(RegWrite), 
-							.clk(clk));
+							.clk(clk),
+							.reset_n(reset_n));
 
 
 	sign_extender SignExtend(.immediate(Instruction[`IMMD_SIZE-1:0]), 
