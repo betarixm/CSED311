@@ -62,8 +62,11 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	wire [`WORD_SIZE-1:0] FetchAddress;
 
+	reg [`WORD_SIZE-1:0] R2;
+
 	initial begin
 		PC <= 0;
+		R2 <= `R2;
 	end
 
     instruction_memory InstructionMemory(.data(DataOut),
@@ -95,8 +98,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.jp(Jump), 
 							.branch(Branch));
 
-	mux MuxWriteReg(.mux_input_1(Instruction[7:6]),
-					.mux_input_2(`R2),
+	mux MuxWriteReg(.mux_input_1({14'd0, Instruction[7:6]}),
+					.mux_input_2(R2),
 					.selector(PCtoReg),
 					.mux_output(WriteReg));
 

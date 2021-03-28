@@ -25,6 +25,7 @@ module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, me
     assign branch = isBR;
 
     always @(*) begin
+        PCtoReg = 0;
         case (instr[`WORD_SIZE-1:`WORD_SIZE-4]) // opcode
             `ALU_OP: begin
                 case (instr[5:0]) // func_code
