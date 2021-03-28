@@ -2,6 +2,7 @@
 `include "adder.v"
 `include "mux.v"
 
+`define OFFSET `WORD_SIZE'b1 
 
 module pc_calculator (pc, branch_cond, branch, jump, sign_extended, target_offset, write_pc_reg, next_pc, real_next_pc);
 	input [`WORD_SIZE-1:0] pc;
@@ -18,12 +19,10 @@ module pc_calculator (pc, branch_cond, branch, jump, sign_extended, target_offse
     wire [`WORD_SIZE-1:0] jump_target_address;
     wire [`WORD_SIZE-1:0] branch_address;
 
-    reg [`WORD_SIZE-1:0] offset = 1;
-
     assign jump_target_address = {pc[`WORD_SIZE-1:`ADDR_SIZE],target_offset};
 
 	adder AdderNextPC(.adder_input1(pc),
-					.adder_input2(offset),
+					.adder_input2(`OFFSET),
 					.adder_output(next_pc));
 
     adder AdderBranch(.adder_input1(pc),
@@ -35,8 +34,8 @@ module pc_calculator (pc, branch_cond, branch, jump, sign_extended, target_offse
                 .selector(branch && branch_cond),
                 .mux_output(before_mux_jump));
 
-    mux MuxJump(.mux_input_1(jump_target_address),
-                .mux_input_2(before_mux_jump),
+    mux MuxJump(.mux_input_1(before_mux_jump),
+                .mux_input_2(jump_target_address),
                 .selector(jump),
                 .mux_output(real_next_pc));
 
