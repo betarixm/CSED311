@@ -1,7 +1,8 @@
 `include "opcodes.v" 	   
 
-module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, mem_write, PCtoReg, jp, branch);
+module control_unit (instr, rt_dest, alu_src, alu_op, reg_write, mem_read, mem_to_reg, mem_write, PCtoReg, jp, branch);
     input [`WORD_SIZE-1:0] instr;
+    output wire rt_dest;
     output wire alu_src;
     output reg [3-1:0] alu_op;
     output wire reg_write;
@@ -17,6 +18,7 @@ module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, me
     reg isLoad;
     reg isBR;
 
+    assign rt_dest = isItype;
     assign alu_src = isItype || isStore;
     assign reg_write = !isStore && !isBR;
     assign mem_read = isLoad;

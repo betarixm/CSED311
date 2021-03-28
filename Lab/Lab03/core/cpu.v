@@ -29,6 +29,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	wire [15:0] Instruction;
 
+	wire RTDest;
     wire ALUSrc;
     wire [3-1:0] ALUOp;
     wire RegWrite;
@@ -44,6 +45,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	wire [`WORD_SIZE-1:0] ReadData2;
 
 	wire [`WORD_SIZE-1:0] WriteReg;
+	wire [`WORD_SIZE-1:0] WriteRegTemp;
 	wire [`WORD_SIZE-1:0] WriteData;
 	wire [`WORD_SIZE-1:0] WriteDataValue;
 
@@ -112,6 +114,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 
 	control_unit MainControl(.instr(Instruction), 
+							.rt_dest(RTDest),
 							.alu_src(ALUSrc), 
 							.alu_op(ALUOp), 
 							.reg_write(RegWrite), 
@@ -122,7 +125,12 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.jp(Jump), 
 							.branch(Branch));
 
-	mux MuxWriteReg(.mux_input_1({14'd0, Instruction[7:6]}),
+	mux MuxWriteRegRT(.mux_input_1({14'd0, Instruction[7:6]}),
+					.mux_input_2({14'd0, Instruction[9:8]}),
+					.selector(RTDest),
+					.mux_output(WriteRegTemp));
+
+	mux MuxWriteReg(.mux_input_1(WriteRegTemp),
 					.mux_input_2(R2),
 					.selector(PCtoReg),
 					.mux_output(WriteReg));
