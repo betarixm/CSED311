@@ -60,13 +60,15 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 	wire [`WORD_SIZE-1:0] DataOut;
 	wire [`WORD_SIZE-1:0] DataAddress;
 
+	wire [`WORD_SIZE-1:0] FetchAddress;
+
 	initial begin
 		PC <= 0;
 	end
 
     instruction_memory InstructionMemory(.data(DataOut),
 										.address_in(PC),
-										.address_out(DataAddress),
+										.address_out(FetchAddress),
 										.sig_fetch(SigFetch),
 										.instruction(Instruction),
 										.clk(clk));
@@ -131,19 +133,18 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 										.opcode(Instruction[`WORD_SIZE-1:`WORD_SIZE-4]),
 										.is_branch(BranchCond));
 
-/*
-	data_memory DataMemory(.address(WireALUOut),
-						.write_data(ReadData2),
-						.ackOutput(ackOutput),
-						.inputReady(inputReady),
-						.data(data),
-						.readM(readM),
-						.writeM(writeM),
-						.address_out(address),
-						.read_data(ReadDataMemory),
-						.mem_write(MemWrite),
-						.mem_read(MemRead),
-						.clk(clk));*/
+	data_memory DataMemory(.read_data(DataOut),
+							.write_data(ReadData2),
+							.mem_read(MemRead),
+							.mem_write(MemWrite),
+							.address_in(WireALUOut),
+							.address_out(DataAddress),
+							.sig_read(SigRead),
+							.sig_write(SigWrite),
+							.read_data_out(ReadDataMemory),
+							.write_data_out(DataWrite),
+							.clk(clk));
+
 
 	mux MuxWriteDataValue(.mux_input_1(WireALUOut),
 						.mux_input_2(ReadDataMemory),
@@ -157,7 +158,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 		.sig_write(SigWrite),
 		.data_write(DataWrite),
 		.input_ready(inputReady),
-		.address_in(DataAddress),
+		.address_data_in(DataAddress),
+		.address_fetch_in(FetchAddress),
 		.address_out(address),
 		.read_m(readM),
 		.write_m(writeM),

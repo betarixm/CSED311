@@ -7,7 +7,8 @@ module memory_io (
     sig_write,
     data_write,
     input_ready,
-    address_in,
+    address_fetch_in,
+    address_data_in,
     address_out,
     read_m,
     write_m,
@@ -20,8 +21,9 @@ module memory_io (
     input sig_write;
     input [`WORD_SIZE-1:0] data_write;
     input input_ready;
-    input [`WORD_SIZE-1:0] address_in;
-    output [`WORD_SIZE-1:0] address_out;
+    input [`WORD_SIZE-1:0] address_fetch_in;
+    input [`WORD_SIZE-1:0] address_data_in;
+    output reg [`WORD_SIZE-1:0] address_out;
     output reg read_m;
     output reg write_m;
     output reg [`WORD_SIZE-1:0] data_out;
@@ -31,25 +33,27 @@ module memory_io (
     reg is_write;
     
     assign data = (is_write) ? (data_write) : (`WORD_SIZE'bz);
-    assign address_out = address_in;
 
     always @(*) begin
         if(sig_fetch) begin
             is_write <= 0;
             read_m <= 1;
             write_m <= 0;
+            address_out = address_fetch_in;
         end
 
         if(sig_read) begin
             is_write <= 0;
             read_m <= 1;
             write_m <= 0;
+            address_out = address_data_in;
         end
 
         if(sig_write) begin
             is_write <= 1;
             read_m <= 0;
             write_m <= 1;
+            address_out = address_data_in;
         end
 
         if(!is_write) begin 
