@@ -166,7 +166,7 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.mem_read(MemRead),
 							.mem_write(MemWrite),
 							.input_ready(inputReady),
-							.ack_output(AckOutput),
+							.ack_output(ackOutput),
 							.address_in(WireALUOut),
 							.address_out(DataAddress),
 							.sig_read(SigRead),
