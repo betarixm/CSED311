@@ -153,7 +153,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.sig_write(SigWrite),
 							.read_data_out(ReadDataMemory),
 							.write_data_out(DataWrite),
-							.clk(clk));
+							.clk(clk),
+							.reset_n(reset_n));
 
 
 	mux MuxWriteDataValue(.mux_input_1(WireALUOut),

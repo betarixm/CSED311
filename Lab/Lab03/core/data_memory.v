@@ -18,6 +18,16 @@ module data_memory (read_data, write_data, mem_read, mem_write, address_in, addr
     assign read_data_out = read_data;
     assign write_data_out = write_data;
 
+    initial begin
+        sig_read <= 0;
+        sig_write <= 0;
+    end
+    
+    always @(reset_n) begin
+        sig_read <= 0;
+        sig_write <= 0;
+    end
+
     always @(negedge clk) begin
         if (mem_read) begin
             sig_read <= 1;
