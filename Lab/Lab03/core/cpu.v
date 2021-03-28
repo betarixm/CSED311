@@ -8,6 +8,8 @@
 `include "pc_calculator.v"
 `include "mux.v"   
 `include "branch_controller.v"
+`include "instruction_memory.v"
+`include "data_memory.v"
 `include "memory_io.v"
 
 
@@ -64,23 +66,39 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	reg [`WORD_SIZE-1:0] R2;
 
+	integer pass;
+
 	initial begin
 		PC <= 0;
 		R2 <= `R2;
+		pass <= 0;
 	end
 
 	always @(*) begin
 		if (reset_n) begin
 			PC <= 0;
+			pass <= 0;
+		end
+	end
+
+	always @(posedge clk) begin
+		if (pass == 0) begin
+			pass = 1;
+			PC <= 0;
+		end
+		else if (SigFetch != 1 && SigRead != 1 && SigWrite != 1) begin
+			PC <= RealNextPC;
 		end
 	end
 
     instruction_memory InstructionMemory(.data(DataOut),
+										.input_ready(inputReady),
 										.address_in(PC),
 										.address_out(FetchAddress),
 										.sig_fetch(SigFetch),
 										.instruction(Instruction),
-										.clk(clk));
+										.clk(clk),
+										.reset_n(reset_n));
 
     pc_calculator PCCalculator(.pc(PC),
 							.branch_cond(BranchCond),
@@ -147,6 +165,8 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 							.write_data(ReadData2),
 							.mem_read(MemRead),
 							.mem_write(MemWrite),
+							.input_ready(inputReady),
+							.ack_output(AckOutput),
 							.address_in(WireALUOut),
 							.address_out(DataAddress),
 							.sig_read(SigRead),

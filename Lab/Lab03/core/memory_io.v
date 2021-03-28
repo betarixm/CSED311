@@ -25,8 +25,8 @@ module memory_io (
     input [`WORD_SIZE-1:0] address_data_in;
     output read_m;
     output write_m;
-    output [`WORD_SIZE-1:0] address_out;
-    output [`WORD_SIZE-1:0] data_out;
+    output reg [`WORD_SIZE-1:0] address_out;
+    output reg [`WORD_SIZE-1:0] data_out;
 
     input clk;
 
@@ -37,18 +37,22 @@ module memory_io (
     assign read_m = (sig_fetch || sig_read) ? 1 : 0;
     assign write_m = (sig_write) ? 1 : 0;
 
-    assign address_out = (sig_fetch || sig_read) ? (sig_fetch ? address_fetch_in : address_data_in) : address_data_in;
-    assign data_out = is_write ? 0 : data;
-
     always @(*) begin
         if(sig_fetch) begin
             is_write = 0;
+            address_out = address_fetch_in;
         end
         else if(sig_read) begin
             is_write = 0;
+            address_out = address_data_in;
         end
         else if(sig_write) begin
             is_write = 1;
+            address_out = address_data_in;
+        end
+
+        if (input_ready) begin
+            data_out = data;
         end
     end
 
