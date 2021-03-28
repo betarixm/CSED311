@@ -2,15 +2,15 @@
 
 module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, mem_write, PCtoReg, jp, branch);
     input [`WORD_SIZE-1:0] instr;
-    output reg alu_src;
+    output wire alu_src;
     output reg [3-1:0] alu_op;
-    output reg reg_write;
-    output reg mem_read;
-    output reg mem_to_reg;
-    output reg mem_write;
+    output wire reg_write;
+    output wire mem_read;
+    output wire mem_to_reg;
+    output wire mem_write;
     output reg PCtoReg;
     output reg jp;
-    output reg branch;
+    output wire branch;
 
     reg isItype;
     reg isStore;
@@ -26,6 +26,10 @@ module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, me
 
     always @(*) begin
         PCtoReg = 0;
+        isItype = 0;
+        isStore = 0;
+        isLoad = 0;
+        isBR = 0;
         case (instr[`WORD_SIZE-1:`WORD_SIZE-4]) // opcode
             `ALU_OP: begin
                 case (instr[5:0]) // func_code
