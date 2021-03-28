@@ -8,6 +8,7 @@
 `include "pc_calculator.v"
 `include "mux.v"   
 `include "branch_controller.v"
+`include "memory_io.v"
 
 
 module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
@@ -53,15 +54,20 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
 	wire [`WORD_SIZE-1:0] WireALUSubOut;
 
+	wire SigFetch, SigRead, SigWrite;
+
+	wire [`WORD_SIZE-1:0] DataWrite;
+	wire [`WORD_SIZE-1:0] DataOut;
+	wire [`WORD_SIZE-1:0] DataAddress;
+
 	initial begin
 		PC <= 0;
 	end
 
-    instruction_memory InstructionMemory(.read_address(PC),
-										.readM(readM),
-										.inputReady(inputReady),
-										.data(data),
-										.address_out(address),
+    instruction_memory InstructionMemory(.data(DataOut),
+										.address_in(PC),
+										.address_out(DataAddress),
+										.sig_fetch(SigFetch),
 										.instruction(Instruction),
 										.clk(clk));
 
@@ -143,5 +149,20 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 						.mux_input_2(ReadDataMemory),
 						.selector(MemtoReg),
 						.mux_output(WriteDataValue));
+
+	memory_io MemoryIO (
+		.data(data),
+		.sig_fetch(SigFetch),
+		.sig_read(SigRead),
+		.sig_write(SigWrite),
+		.data_write(DataWrite),
+		.input_ready(inputReady),
+		.address_in(DataAddress),
+		.address_out(address),
+		.read_m(readM),
+		.write_m(writeM),
+		.data_out(DataOut),
+		.clk(clk)
+	);
 
 endmodule							  																		  
