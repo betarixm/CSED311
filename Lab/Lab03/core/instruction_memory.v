@@ -10,7 +10,7 @@ module instruction_memory (data, address_in, address_out, sig_fetch, instruction
     input clk;
 
     assign address_out = address_in;
-    assign instruction = (data != 'bz) ? data : instruction;
+    assign instruction = data;
 
     initial begin
         sig_fetch <= 0;

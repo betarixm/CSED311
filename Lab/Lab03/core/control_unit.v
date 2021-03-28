@@ -42,10 +42,12 @@ module control_unit (instr, alu_src, alu_op, reg_write, mem_read, mem_to_reg, me
             `ORI_OP,
             `LHI_OP: begin
                 isItype = 1;
+                case (instr[`WORD_SIZE-1:`WORD_SIZE-4])
+                    `ADI_OP: alu_op = `FUNC_ADD;
+                    `ORI_OP: alu_op = `FUNC_ORR;
+                    `LHI_OP: alu_op = `FUNC_SHL;
+                endcase
             end
-            `ADI_OP: alu_op = `FUNC_ADD;
-            `ORI_OP: alu_op = `FUNC_ORR;
-            `LHI_OP: alu_op = `FUNC_SHL;
 
             `LWD_OP: begin
                 isItype = 1;
