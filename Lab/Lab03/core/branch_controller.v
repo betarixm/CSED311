@@ -1,6 +1,6 @@
 `include "opcodes.v"
 
-module branch_controller(sub_input, opcode, is_branch) begin
+module branch_controller(sub_input, opcode, is_branch);
     input [`WORD_SIZE-1:0] sub_input;
     input [3:0] opcode;
     output is_branch;
@@ -26,4 +26,4 @@ module branch_controller(sub_input, opcode, is_branch) begin
             end
         endcase
     end
-end
+endmodule
