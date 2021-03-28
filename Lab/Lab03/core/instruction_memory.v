@@ -1,8 +1,10 @@
 `include "opcodes.v" 	   
 
-module instruction_memory (data, input_ready, address_in, address_out, sig_fetch, instruction, clk, reset_n);
+module instruction_memory (data, input_ready, mem_read, mem_write, address_in, address_out, sig_fetch, instruction, clk, reset_n);
     inout [`WORD_SIZE-1:0] data;
     input input_ready;
+    input mem_read;
+    input mem_write;
     input [`WORD_SIZE-1:0] address_in;
     output [`WORD_SIZE-1:0] address_out;
     output reg sig_fetch;
@@ -15,11 +17,11 @@ module instruction_memory (data, input_ready, address_in, address_out, sig_fetch
     assign instruction = data;
 
     initial begin
-        sig_fetch <= 0;
+        sig_fetch <= 1;
     end
 
     always @(reset_n) begin
-        sig_fetch <= 0;
+        sig_fetch <= 1;
     end
 
 	always @(*) begin
@@ -29,7 +31,9 @@ module instruction_memory (data, input_ready, address_in, address_out, sig_fetch
     end
 
     always @(posedge clk) begin
-        sig_fetch <= 1;
+        if (!mem_read && !mem_write) begin
+            sig_fetch <= 1;
+        end
     end
 
 endmodule

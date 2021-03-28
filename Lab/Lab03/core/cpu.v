@@ -88,13 +88,15 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 			pass = 1;
 			PC <= 0;
 		end
-		else if (SigFetch != 1 && SigRead != 1 && SigWrite != 1) begin
+		else if (SigFetch != 1 && MemRead != 1 && MemWrite != 1) begin
 			PC <= RealNextPC;
 		end
 	end
 
     instruction_memory InstructionMemory(.data(DataOut),
 										.input_ready(inputReady),
+										.mem_read(MemRead),
+										.mem_write(MemWrite),
 										.address_in(PC),
 										.address_out(FetchAddress),
 										.sig_fetch(SigFetch),

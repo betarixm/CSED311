@@ -32,10 +32,10 @@ module memory_io (
 
     reg is_write;
     
-    assign data = (is_write) ? (data_write) : (`WORD_SIZE'bz);
+    assign data = (sig_write) ? (data_write) : (`WORD_SIZE'bz);
     
     assign read_m = (sig_fetch || sig_read) ? 1 : 0;
-    assign write_m = (sig_write) ? 1 : 0;
+    assign write_m = (is_write) ? 1 : 0;
 
     always @(*) begin
         if(sig_fetch) begin
@@ -46,9 +46,12 @@ module memory_io (
             is_write = 0;
             address_out = address_data_in;
         end
-        else if(sig_write) begin
-            is_write = 1;
+        if(sig_write) begin
             address_out = address_data_in;
+            is_write = 1;
+        end
+        else begin
+            is_write = 0;
         end
 
         if (input_ready) begin
