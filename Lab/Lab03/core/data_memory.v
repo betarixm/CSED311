@@ -42,7 +42,7 @@ module data_memory (read_data, write_data, mem_read, mem_write, input_ready, ack
 		end
     end
 
-    always @(posedge clk) begin
+    always @(negedge clk) begin
         if (mem_read) begin
             sig_read <= 1;
         end

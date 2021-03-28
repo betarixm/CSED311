@@ -31,9 +31,9 @@ module instruction_memory (data, input_ready, mem_read, mem_write, address_in, a
     end
 
     always @(posedge clk) begin
-        if (!mem_read && !mem_write) begin
+        //if (!mem_read && !mem_write) begin
             sig_fetch <= 1;
-        end
+        //end
     end
 
 endmodule
