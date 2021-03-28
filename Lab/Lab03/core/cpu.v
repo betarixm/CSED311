@@ -95,8 +95,6 @@ module cpu (readM, writeM, address, data, ackOutput, inputReady, reset_n, clk);
 
     instruction_memory InstructionMemory(.data(DataOut),
 										.input_ready(inputReady),
-										.mem_read(MemRead),
-										.mem_write(MemWrite),
 										.address_in(PC),
 										.address_out(FetchAddress),
 										.sig_fetch(SigFetch),
