@@ -7,7 +7,7 @@ module register_file(read_out1, read_out2, read1, read2, write_reg, write_data, 
     input [1:0] read1;
     input [1:0] read2;
     input [`WORD_SIZE - 1:0] write_reg;
-    input [15:0] write_data;
+    input [`WORD_SIZE - 1:0] write_data;
     input reg_write;
     input clk;
 
@@ -24,8 +24,8 @@ module register_file(read_out1, read_out2, read1, read2, write_reg, write_data, 
         read_out2 <= `WORD_SIZE'd0;
     end
 
-    always @(posedge clk) begin
-         if(reg_write && 0 <= write_reg && write_reg <= `NUM_MAX_REGISTER) begin
+    always @(*) begin
+         if(reg_write && 0 <= write_reg && write_reg < `NUM_MAX_REGISTER) begin
              r[write_reg] <= write_data;
          end else begin
             if(0 <= read1 && read1 < `NUM_MAX_REGISTER) begin
