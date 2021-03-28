@@ -3,7 +3,7 @@
 module branch_controller(sub_input, opcode, is_branch);
     input [`WORD_SIZE-1:0] sub_input;
     input [3:0] opcode;
-    output is_branch;
+    output reg is_branch;
 
     always @(*) begin
         is_branch = 0;
