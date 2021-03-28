@@ -30,7 +30,7 @@ module pc_calculator (pc, branch_cond, branch, jump, sign_extended, target_offse
                     .adder_output(branch_address));
 
     mux MuxBranch(.mux_input_1(next_pc),
-                .mux_input_2(branch_address),
+                .mux_input_2(branch_address+`WORD_SIZE'b1),
                 .selector(branch && branch_cond),
                 .mux_output(before_mux_jump));
 
