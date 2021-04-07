@@ -3,8 +3,8 @@
 module change_state(clk, reset_n, next_state, current_state);
     input clk;
     input reset_n;
-    input next_state;
-    output current_state;
+    input [`kStateBits-1:0] next_state;
+    output [`kStateBits-1:0] current_state;
 
     initial begin
         current_state <= `STATE_IF_1;

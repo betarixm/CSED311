@@ -3,8 +3,8 @@
 module calculate_state(is_jal, is_branch, is_load, is_store, is_itype, is_rtype, PVS_write_en, current_state, next_state);
     input is_jal, is_branch, is_load, is_store, is_itype, is_rtype, PVS_write_en;
     
-    input current_state;
-    output next_state;
+    input [`kStateBits-1:0] current_state;
+    output [`kStateBits-1:0] next_state;
 
     initial begin
         next_state <= `STATE_IF_1;
