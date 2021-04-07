@@ -1,7 +1,7 @@
 `include "state_def.v"
 
-module calculate_state(is_jal, is_branch, is_load, is_store, is_itype, is_rtype, PVS_write_en, current_state, next_state);
-    input is_jal, is_branch, is_load, is_store, is_itype, is_rtype, PVS_write_en;
+module calculate_state(is_jwrite, is_wwd, is_halt, is_branch, is_load, is_store, is_itype, is_rtype, PVS_write_en, current_state, next_state);
+    input is_jwrite, is_wwd, is_halt, is_branch, is_load, is_store, is_itype, is_rtype, PVS_write_en;
     
     input [`kStateBits-1:0] current_state;
     output [`kStateBits-1:0] next_state;
@@ -29,7 +29,7 @@ module calculate_state(is_jal, is_branch, is_load, is_store, is_itype, is_rtype,
                 if (is_branch & PVS_write_en) begin
                     next_state = `STATE_IF_1;
                 end
-                else if (is_itype | is_rtype | is_jal) begin
+                else if (is_itype | is_rtype | is_jwrite | is_wwd | is_halt) begin
                     next_state = `STATE_WB;
                 end
                 else if (is_load | is_store) begin
