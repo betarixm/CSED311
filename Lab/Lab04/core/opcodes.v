@@ -41,5 +41,11 @@
 `define INST_FUNC_WWD 6'd28
 `define INST_FUNC_HLT 6'd29
 
+// ALU branch types
+`define   BRANCH_NE   2'd0
+`define   BRANCH_EQ   2'd1
+`define   BRANCH_GZ   2'd2
+`define   BRANCH_LZ   2'd3
+
 `define   WORD_SIZE   16         
 `define   NUM_REGS   4
