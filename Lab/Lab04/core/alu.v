@@ -5,7 +5,7 @@
 module alu (A, B, func_code, branch_type, C, overflow_flag, bcond);
     input [`NumBits-1:0] A; //input data A
     input [`NumBits-1:0] B; //input data B
-    input [3-1:0] func_code; //function code for the operation
+    input [4-1:0] func_code; //function code for the operation
     input [2-1:0] branch_type; //branch type for bne, beq, bgz, blz
     output reg [`NumBits-1:0] C; //output data C
     output reg overflow_flag; 
@@ -21,6 +21,9 @@ module alu (A, B, func_code, branch_type, C, overflow_flag, bcond);
             `FUNC_TCP:  C = ~A + 1;
             `FUNC_SHL:  C = $signed(A) <<< 1;
             `FUNC_SHR : C = $signed(A) >>> 1;
+            `FUNC_ZRO : C = `NumBits'd0;
+            `FUNC_IDN : C = A;
+            `FUNC_LHI : C = 
         endcase
 
         if (func_code == `FUNC_ADD) overflow_flag = ~(A[`NumBits - 1] ^ B[`NumBits - 1]) & (A[`NumBits - 1] ^ C[`NumBits - 1]);
