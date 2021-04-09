@@ -18,14 +18,18 @@
 `define   WWD_OP   4'd15
 
 // ALU Function Codes
-`define   FUNC_ADD   3'b000
-`define   FUNC_SUB   3'b001             
-`define   FUNC_AND   3'b010
-`define   FUNC_ORR   3'b011                            
-`define   FUNC_NOT   3'b100
-`define   FUNC_TCP   3'b101
-`define   FUNC_SHL   3'b110
-`define   FUNC_SHR   3'b111   
+`define   FUNC_ADD   4'b0000
+`define   FUNC_SUB   4'b0001
+`define   FUNC_AND   4'b0010
+`define   FUNC_ORR   4'b0011
+`define   FUNC_NOT   4'b0100
+`define   FUNC_TCP   4'b0101
+`define   FUNC_SHL   4'b0110
+`define   FUNC_SHR   4'b0111
+`define   FUNC_ZRO   4'b1000
+`define   FUNC_IDN   4'b1001
+`define   FUNC_LHI   4'b1010
+
 
 // ALU instruction function codes
 `define INST_FUNC_ADD 6'd0
@@ -41,5 +45,13 @@
 `define INST_FUNC_WWD 6'd28
 `define INST_FUNC_HLT 6'd29
 
-`define   WORD_SIZE   16         
+// ALU branch types
+`define   BRANCH_NE   2'd0
+`define   BRANCH_EQ   2'd1
+`define   BRANCH_GZ   2'd2
+`define   BRANCH_LZ   2'd3
+
+`define   WORD_SIZE   16
+`define   ADDR_SIZE   12
+`define   IMMD_SIZE   8
 `define   NUM_REGS   4
