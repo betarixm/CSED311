@@ -11,15 +11,16 @@ module control_unit(opcode, func_code, clk, pc_write_cond, pc_write, i_or_d, mem
     output reg [1:0] reg_write, alu_src_A, alu_src_B;
     output reg alu_op;
 
-    case (opcode)
-        `ADI_OP,
-        `LWD_OP,
-        `SWD_OP: alu_op = 1b'0;
-        `BNE_OP,
-        `BEQ_OP,
-        `BGZ_OP,
-        `BLZ_OP: alu_op = 1b'1;
-    endcase
-
+    always @(*) begin
+        case (opcode)
+            `ADI_OP,
+            `LWD_OP,
+            `SWD_OP: alu_op = 1b'0;
+            `BNE_OP,
+            `BEQ_OP,
+            `BGZ_OP,
+            `BLZ_OP: alu_op = 1b'1;
+        endcase
+    end
 
 endmodule
