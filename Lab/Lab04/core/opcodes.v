@@ -30,6 +30,8 @@
 `define   FUNC_IDN   4'b1001
 `define   FUNC_LHI   4'b1010
 
+`define   FUNC_NOTHING 4'b1111
+
 
 // ALU instruction function codes
 `define INST_FUNC_ADD 6'd0

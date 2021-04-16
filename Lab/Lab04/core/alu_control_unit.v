@@ -9,6 +9,12 @@ module alu_control_unit(funct, opcode, ALUOp, clk, funcCode, branchType);
     output reg [4-1:0] funcCode;
     output reg [2-1:0] branchType;
 
+    if (ALUOp == 1'b0) begin
+        funcCode = `FUNC_ADD;
+    end else if (ALUOp == 1'b1) begin
+        funcCode = `FUNC_SUB;
+    end
+
     case (opcode)
         `ALU_OP,
         `JPR_OP, 
@@ -24,23 +30,16 @@ module alu_control_unit(funct, opcode, ALUOp, clk, funcCode, branchType);
                 `INST_FUNC_TCP: funcCode = `FUNC_TCP;
                 `INST_FUNC_SHL: funcCode = `FUNC_SHL;
                 `INST_FUNC_SHR: funcCode = `FUNC_SHR;
-                `INST_FUNC_JPR: 
-                `INST_FUNC_JRL: 
+                `INST_FUNC_JPR: funcCode = `FUNC_NOTHING;
+                `INST_FUNC_JRL: funcCode = `FUNC_NOTHING;
                 `INST_FUNC_WWD: funcCode = `FUNC_IDN;
                 `INST_FUNC_HLT: funcCode = `FUNC_ZRO;
             endcase
         end
-        `ADI_OP: funcCode = `FUNC_ADD;
         `ORI_OP: funcCode = `FUNC_ORR;
         `LHI_OP: funcCode = `FUNC_LHI;
-        `LWD_OP: funcCode = `FUNC_ADD;
-        `SWD_OP: funcCode = `FUNC_ADD;
-        `BNE_OP: funcCode = `FUNC_SUB;
-        `BEQ_OP: funcCode = `FUNC_SUB;
-        `BGZ_OP: funcCode = `FUNC_SUB;
-        `BLZ_OP: funcCode = `FUNC_SUB;
-        `JMP_OP: 
-        `JAL_OP: 
+        `JMP_OP: funcCode = `FUNC_NOTHING;
+        `JAL_OP: funcCode = `FUNC_NOTHING;
     endcase
 
     case (opcode)
