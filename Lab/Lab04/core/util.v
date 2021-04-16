@@ -1,3 +1,5 @@
+`define EMPTY 16'b0
+
 module mux4_1 (sel, i1, i2, i3, i4, o);
    input [1:0] sel;
    input [15:0] i1, i2, i3, i4;

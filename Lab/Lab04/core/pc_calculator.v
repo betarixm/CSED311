@@ -1,5 +1,5 @@
 `include "opcodes.v"
-`include "mux.v"
+`include "util.v"
 
 `define OFFSET `WORD_SIZE'b1
 
@@ -27,12 +27,14 @@ module pc_calculator(pc, bcond, branch, jump, sign_extend, target_offset, write_
                         .adder_output(branch_address));
 
 
-    mux_3_1 MuxPC(.mux_input_0(next_pc),
-                    .mux_input_1(branch_address+`WORD_SIZE'b1),
-                    .selector_1(branch && bcond),
-                    .mux_input_2(jump_target_address),
-                    .selector_2(jump),
-                    .mux_output(real_next_pc));
-
+    reg [1:0] s = 2'b00;
+    if (branch && bcond) s = 2'b01;
+    if (jump) s = 2'b10;
+    mux4_1 MuxPC(.sel(s),
+                .i1(next_pc),
+                .i2(branch_address+`WORD_SIZE'b1),
+                .i3(jump_target_address),
+                .i4(`EMPTY)
+                .o(real_next_pc));
 
 endmodule
