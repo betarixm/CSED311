@@ -20,10 +20,12 @@ module alu (A, B, func_code, branch_type, C, overflow_flag, bcond);
             `FUNC_NOT:  C = ~A;
             `FUNC_TCP:  C = ~A + 1;
             `FUNC_SHL:  C = $signed(A) <<< 1;
-            `FUNC_SHR : C = $signed(A) >>> 1;
-            `FUNC_ZRO : C = `NumBits'd0;
-            `FUNC_IDN : C = A;
-            `FUNC_LHI : C = 
+            `FUNC_SHR:  C = $signed(A) >>> 1;
+            `FUNC_ZRO:  C = `NumBits'd0;
+            `FUNC_IDN:  C = A;
+            `FUNC_LHI:  C = {A[`ADDR_SIZE-1:0],`ADDR_SIZE'b0};
+            `FUNC_TGT:  C = {A[`WORD_SIZE-1:`ADDR_SIZE],B[`ADDR_SIZE-1:0]};
+            `FUNC_OFT:  C = A + B[`IMMD_SIZE-1:0] + 1;
         endcase
 
         if (func_code == `FUNC_ADD) overflow_flag = ~(A[`NumBits - 1] ^ B[`NumBits - 1]) & (A[`NumBits - 1] ^ C[`NumBits - 1]);

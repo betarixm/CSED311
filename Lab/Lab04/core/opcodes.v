@@ -29,8 +29,8 @@
 `define   FUNC_ZRO   4'b1000
 `define   FUNC_IDN   4'b1001
 `define   FUNC_LHI   4'b1010
-
-`define   FUNC_NOTHING 4'b1111
+`define   FUNC_TGT   4'b1011
+`define   FUNC_OFT   4'b1100
 
 
 // ALU instruction function codes
