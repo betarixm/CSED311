@@ -197,7 +197,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                     // MDR <- MEM[ALUOut]
                     mem_read = `TRUE;
                 end else if (is_store) begin
-                    // MEM[ALUOut] <- ALUOut
+                    // MEM[ALUOut] <- B
                     mem_write = `TRUE;
                 end
             end
