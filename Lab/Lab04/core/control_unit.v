@@ -1,6 +1,11 @@
 `include "opcodes.v"
 
-module control_unit(opcode, func_code, clk, pc_write_cond, pc_write, i_or_d, mem_read, mem_to_reg, mem_write, ir_write, pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_src_A, alu_src_B, alu_op);
+
+// for alu_op
+`define ADD_OP    2'b00
+`define SUB_OP    2'b01
+`define ALU_OP    2'b10
+
     input [3:0] opcode;
     input [5:0] func_code;
     input clk;
@@ -9,7 +14,8 @@ module control_unit(opcode, func_code, clk, pc_write_cond, pc_write, i_or_d, mem
     //additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD. new_inst: new instruction start
     output reg pc_to_reg, halt, wwd, new_inst;
     output reg [1:0] reg_write, alu_src_A, alu_src_B;
-    output reg alu_op;
+    output reg [1:0] alu_op;
+
 
     always @(*) begin
         case (opcode)
