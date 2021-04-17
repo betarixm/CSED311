@@ -248,7 +248,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
             end
         end
         `STATE_EX_2: begin
-            if (is_branch) begin
+            if (is_branch | is_jump) begin
                 next_state = `STATE_IF_1;
             end
             else if (is_itype | is_rtype | is_jwrite | is_wwd | is_halt) begin
