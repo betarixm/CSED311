@@ -199,6 +199,11 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end else if (is_store) begin
                     // MEM[ALUOut] <- B
                     mem_write = `TRUE;
+                    // PC <- PC + OFFSET
+                    alu_src_A = `PC_A;
+                    alu_src_B = `OFFSET_B;
+                    alu_op = `ADD_OP;
+                    pc_write = `TRUE;
                 end
             end
             `STATE_MEM_2: begin
@@ -206,10 +211,13 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 ;
             end
             `STATE_WB: begin
-                // RF[rd(IR)] <- MDR
                 reg_write = `TRUE;
-                mem_to_reg = `TRUE;
-
+                // default:
+                // RF[rd(IR)] <- ALUOut
+                if (is_load) begin
+                    // RF[rd(IR)] <- MDR
+                    mem_to_reg = `TRUE;
+                end
                 // PC <- PC + OFFSET
                 alu_src_A = `PC_A;
                 alu_src_B = `OFFSET_B;
