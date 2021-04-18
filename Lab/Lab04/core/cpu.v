@@ -47,11 +47,13 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 
 	//## IF/ID
 	wire [`WORD_SIZE-1:0] w__inst_ext;
-	wire [`]
 
 	//## ID/EX
+	wire [`WORD_SIZE-1:0] w__immext__mux;
 	wire [`WORD_SIZE-1:0] w__read_data_1;
 	wire [`WORD_SIZE-1:0] w__read_data_2;
+	wire [`WORD_SIZE-1:0] w__alu_a;
+	wire [`WORD_SIZE-1:0] w__alu_b;
 
 	//## EX/MEM
 
@@ -67,8 +69,8 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	reg [`WORD_SIZE-1:0] r__alu_out;
 	reg [`WORD_SIZE-1:0] r__inst;
 
-	//# Modules
 
+	//# Modules
 	//## MEM
 	mux2_1 mux__pc__alu_out(
 		.sel(c__i_or_d),
@@ -76,7 +78,6 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.i2(w__aout__mux)
 		.o(w__mux__memory));
 
-	// TODO: HOW??
 	memory Memory(
 		.clk(clk),
 		.reset_n(reset_n),
@@ -125,10 +126,28 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.alu_op()
 	);
 
-	// TODO: imm extend
-
+	sign_extender Imm_extend(
+		.immediate(r__inst[`IMMD_SIZE-1:0]),
+		.sign_extended(w__immext__mux)
+	);
 
 	//## EX
+	mux2_1 mux__alu_a(
+		.sel(c__alu_src_a),
+		.i1(pc),
+		.i2(r__read_data_1),
+		.o(w__alu_a)
+	);
+
+	mux4_1 mux__alu_b(
+		.sel(c__alu_src_b),
+		.i1(r__read_data_2),
+		.i2(4),
+		.i3(), //TODO
+		.i4(),
+		.o(w__alu_b)
+	);
+
 	alu_control_unit ALU_control(
 		.funct(),
 		.opcode(),
@@ -146,6 +165,14 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.C(), 
 		.overflow_flag(), 
 		.bcond());
+
+	//## WB
+	mux2_1 mux__alu_out__reg_memory(
+		.sel(c__mem_to_reg),
+		.i1(r__alu_out),
+		.i2(r__memory_register),
+		.o(w__mux__write_data)
+	);
 	
 
 endmodule
