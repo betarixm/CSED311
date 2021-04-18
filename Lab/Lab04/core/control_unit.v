@@ -144,6 +144,8 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
         pc_write_cond = `TRUE;
         pc_to_reg = `FALSE;
         reg_write_dest = `RD_W;
+        wwd = `FALSE;
+        halt = `FALSE;
         case (current_state)
             `STATE_IF_1: begin
                 // IR <- MEM[PC]

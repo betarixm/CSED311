@@ -97,7 +97,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	// TODOTODOTODOTODOTODOTODOTODOTODOTODO
 	// assign w__data = c__pvs_write_en ? r__read_data_2 : w__data;
 	
-	assign output_port = c__wwd ? r__read_data_1 : 0;
+	assign output_port = c__wwd ? r__read_data_1 : output_port;
 	assign num_inst = r__num_inst;
 
 	initial begin
@@ -105,6 +105,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		r__const_1 <= 1;
 
 		r__pc <= 0;
+		r__num_inst <= 0;
 	end
 	//# Modules
 	//## MEM
@@ -227,7 +228,8 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.i2(r__memory_register),
 		.o(w__mux__write_data)
 	);
-	
+
+
 	always @(posedge clk) begin
 		if (!reset_n) begin
 			r__num_inst <= 0;
