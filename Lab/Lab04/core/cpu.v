@@ -92,13 +92,18 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 
 	//# Initial
 	assign w__data = c__pvs_write_en ? r__read_data_2 : w__data;
-
+	
+	initial begin
+		r__pc = 0;
+		r__const_0 = 0;
+		r__const_4 = 4;
+	end
 	//# Modules
 	//## MEM
 	mux2_1 mux__pc__alu_out(
 		.sel(c__i_or_d),
-		.i1(w__pc__mux),
-		.i2(w__aout__mux),
+		.i1(r__pc),
+		.i2(r__alu_out),
 		.o(w__mux__memory));
 
 	memory Memory(
