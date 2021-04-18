@@ -71,34 +71,6 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
         is_halt = `FALSE;
         pvs_write_en = `FALSE;
         case (opcode)
-            `ALU_OP,
-            `JPR_OP,
-            `JRL_OP,
-            `WWD_OP,
-            `HLT_OP: begin
-                case (func_code)
-                    `INST_FUNC_ADD,
-                    `INST_FUNC_SUB,
-                    `INST_FUNC_AND,
-                    `INST_FUNC_ORR,
-                    `INST_FUNC_NOT,
-                    `INST_FUNC_TCP,
-                    `INST_FUNC_SHL,
-                    `INST_FUNC_SHR: is_rtype = `TRUE;
-
-                    `INST_FUNC_JPR: begin
-                        is_jump = `TRUE;
-                        is_jreg = `TRUE;
-                    end
-                    `INST_FUNC_JRL: begin
-                        is_jump = `TRUE;
-                        is_jreg = `TRUE;
-                        is_jwrite = `TRUE;
-                    end
-                    `INST_FUNC_WWD: is_wwd = `TRUE;
-                    `INST_FUNC_HLT: is_halt = `TRUE;
-                endcase
-            end
             `ADI_OP,
             `ORI_OP: begin
                 is_itype = `TRUE;
@@ -130,8 +102,38 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 is_jrel = `TRUE;
                 is_jwrite = `TRUE;
             end
-        endcase
+            `ALU_OP,
+            `JPR_OP,
+            `JRL_OP,
+            `WWD_OP,
+            `HLT_OP: begin
+                case (func_code)
+                    `INST_FUNC_ADD,
+                    `INST_FUNC_SUB,
+                    `INST_FUNC_AND,
+                    `INST_FUNC_ORR,
+                    `INST_FUNC_NOT,
+                    `INST_FUNC_TCP,
+                    `INST_FUNC_SHL,
+                    `INST_FUNC_SHR: is_rtype = `TRUE;
 
+                    `INST_FUNC_JPR: begin
+                        is_jump = `TRUE;
+                        is_jreg = `TRUE;
+                    end
+                    `INST_FUNC_JRL: begin
+                        is_jump = `TRUE;
+                        is_jreg = `TRUE;
+                        is_jwrite = `TRUE;
+                    end
+                    `INST_FUNC_WWD: is_wwd = `TRUE;
+                    `INST_FUNC_HLT: is_halt = `TRUE;
+                endcase
+            end
+        endcase
+    end
+
+    always @(*) begin
         ////////////////
         // micro code //
         ////////////////
@@ -267,7 +269,9 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 pc_src = `ALU_PC;
             end
         endcase
+    end
 
+    always @(*) begin
         /////////////////////
         // calculate state //
         /////////////////////
