@@ -289,11 +289,11 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 next_state = `STATE_EX_1; 
             end
             `STATE_EX_1: begin
-                if (is_rtype | is_itype | is_lhi) begin
-                    next_state = `STATE_WB;
-                end
-                else if (is_load | is_store) begin
+                if (is_load | is_store) begin
                     next_state = `STATE_MEM_1;
+                end
+                else if (is_rtype | is_itype | is_lhi) begin
+                    next_state = `STATE_WB;
                 end
                 else if (is_jump) begin
                     next_state = `STATE_EX_2;
