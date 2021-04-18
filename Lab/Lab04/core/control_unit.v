@@ -34,8 +34,8 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
 
     output reg pc_write_cond, pc_write, i_or_d, mem_read, mem_to_reg, mem_write, ir_write, pc_src, pvs_write_en;
     //additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD. new_inst: new instruction start
-    output reg pc_to_reg, halt, wwd, new_inst;
-    output reg [1:0] reg_write, alu_src_A, alu_src_B;
+    output reg pc_to_reg, halt, wwd, new_inst, reg_write;
+    output reg [1:0] alu_src_A, alu_src_B;
     output reg [1:0] alu_op;
 
     reg [`kStateBits-1:0] current_state;

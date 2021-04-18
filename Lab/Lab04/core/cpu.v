@@ -38,9 +38,9 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire c__mem_to_reg;
 	wire c__ir_write;
 	wire c__pc_source;
-	wire c__alu_op;
-	wire c__alu_src_a;
-	wire c__alu_src_b;
+	wire [1:0] c__alu_op;
+	wire [1:0] c__alu_src_a;
+	wire [1:0] c__alu_src_b;
 	wire c__reg_write;
 	wire c__wwd;
 	wire c__pc_to_write;
@@ -125,7 +125,6 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.write_reg(r__inst[`RD]),
 		.write_data(w__mux__write_data),
 		.reg_write(c__reg_write),
-		.reset_n(reset_n),
 		.pvs_write_en(c__pvs_write_en),
 		.clk(clk),
 		.read_out1(w__read_data_1),
@@ -164,7 +163,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 
 	//## EX
 	mux2_1 mux__alu_a(
-		.sel(c__alu_src_a),
+		.sel(c__alu_src_a[0]),
 		.i1(r__pc),
 		.i2(r__read_data_1),
 		.o(w__alu_a)
