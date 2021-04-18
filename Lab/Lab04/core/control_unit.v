@@ -220,21 +220,21 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end
             end
             `STATE_MEM_1: begin
-                pvs_write_en = `TRUE;
                 i_or_d = `ALUOut_MEM;
                 if (is_load) begin
                     // MDR <- MEM[ALUOut]
                     mem_read = `TRUE;
                 end else if (is_store) begin
                     // MEM[ALUOut] <- B
+                    pvs_write_en = `TRUE;
                     mem_write = `TRUE;
                 end
             end
             `STATE_MEM_2: begin
-                pvs_write_en = `TRUE;
                 if (is_load) begin
                     mem_read = `TRUE;
                 end else if (is_store) begin
+                    pvs_write_en = `TRUE;
                     mem_write = `TRUE;
                     // PC <- PC + OFFSET
                     alu_src_A = `PC_A;

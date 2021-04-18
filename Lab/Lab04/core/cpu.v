@@ -229,6 +229,16 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.o(w__mux__write_data)
 	);
 
+	always @(*) begin
+		// Memory
+		if(c__mem_read) begin
+			if(c__i_or_d) begin
+				r__memory_register <= w__data;
+			end else begin
+				r__inst <= w__data;
+			end
+		end
+	end
 
 	always @(posedge clk) begin
 		if (!reset_n) begin
@@ -241,14 +251,6 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 			r__pc <= w__mux__pc;
 		end
 
-		// Memory
-		if(c__mem_read) begin
-			if(c__i_or_d) begin
-				r__memory_register <= w__data;
-			end else begin
-				r__inst <= w__data;
-			end
-		end
 
 		// Register Latch
 		r__read_data_1 <= w__read_data_1;
