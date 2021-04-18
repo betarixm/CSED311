@@ -1,6 +1,13 @@
 `include "env.v"
 `include "util.v"
 `include "memory.v"
+`include "extender.v"
+`include "alu_control_unit.v"
+`include "alu.v"
+`include "control_unit.v"
+`include "memory.v"
+`include "opcodes.v"
+`include "register_file.v"
 
 `timescale 1ns/1ns
 `define WORD_SIZE 16    // data and address word size
