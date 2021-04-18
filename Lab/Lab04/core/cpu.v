@@ -88,6 +88,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	reg [`WORD_SIZE-1:0] r__read_data_2;
 	reg [`WORD_SIZE-1:0] r__alu_out;
 	reg [`WORD_SIZE-1:0] r__inst;
+	reg [`WORD_SIZE-1:0] r__num_inst;
 
 	reg [`WORD_SIZE-1:0] r__const_0;
 	reg [`WORD_SIZE-1:0] r__const_1;
@@ -97,6 +98,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	// assign w__data = c__pvs_write_en ? r__read_data_2 : w__data;
 	
 	assign output_port = c__wwd ? r__read_data_1 : 0;
+	assign num_inst = r__num_inst;
 
 	initial begin
 		r__const_0 <= 0;
@@ -228,10 +230,12 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	
 	always @(posedge clk) begin
 		if (!reset_n) begin
+			r__num_inst <= 1;
 			r__pc <= 0;
 		end
 		// PC
 		if(c__pc_write || (w__bcond && c__pc_write_not_cond)) begin
+			r__num_inst <= r__num_inst + 1;
 			r__pc <= w__mux__pc;
 		end
 
