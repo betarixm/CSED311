@@ -162,7 +162,12 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 alu_src_A = `PC_A;
                 alu_src_B = `OFFSET_B;
                 alu_op = `ADD_OP;
-                if (is_wwd) wwd = `TRUE;
+                if (is_wwd) begin
+                    wwd = `TRUE;
+                    // PC <- PC + OFFSET
+                    pc_write = `TRUE;
+                    pc_src = `ALU_PC;
+                end
             end
             `STATE_EX_1: begin
                 // ALUOUT <- REG O REG

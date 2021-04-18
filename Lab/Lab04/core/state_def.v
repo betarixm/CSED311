@@ -1,4 +1,4 @@
-`define kStateBits   4
+`define kStateBits   3
 
 `define STATE_IF_1   `kStateBits'd0
 `define STATE_IF_2   `kStateBits'd1
