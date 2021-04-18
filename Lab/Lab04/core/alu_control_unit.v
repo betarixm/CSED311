@@ -23,6 +23,17 @@ module alu_control_unit(funct, opcode, ALUOp, clk, funcCode, branchType);
         end
         else begin
             case (opcode)
+                `ADI_OP: funcCode = `FUNC_ADD;
+                `ORI_OP: funcCode = `FUNC_ORR;
+                `LHI_OP: funcCode = `FUNC_LHI;
+                `JMP_OP: funcCode = `FUNC_TGT;
+                `JAL_OP: funcCode = `FUNC_TGT;
+                `LWD_OP: funcCode = `FUNC_ADD;
+                `SWD_OP: funcCode = `FUNC_ADD;
+                `BNE_OP: funcCode = `FUNC_OFT;
+                `BEQ_OP: funcCode = `FUNC_OFT;
+                `BGZ_OP: funcCode = `FUNC_OFT;
+                `BLZ_OP: funcCode = `FUNC_OFT;
                 `ALU_OP,
                 `JPR_OP, 
                 `JRL_OP, 
@@ -43,17 +54,6 @@ module alu_control_unit(funct, opcode, ALUOp, clk, funcCode, branchType);
                         `INST_FUNC_HLT: funcCode = `FUNC_ZRO;
                     endcase
                 end
-                `ADI_OP: funcCode = `FUNC_ADD;
-                `ORI_OP: funcCode = `FUNC_ORR;
-                `LHI_OP: funcCode = `FUNC_LHI;
-                `JMP_OP: funcCode = `FUNC_TGT;
-                `JAL_OP: funcCode = `FUNC_TGT;
-                `LWD_OP: funcCode = `FUNC_ADD;
-                `SWD_OP: funcCode = `FUNC_ADD;
-                `BNE_OP: funcCode = `FUNC_OFT;
-                `BEQ_OP: funcCode = `FUNC_OFT;
-                `BGZ_OP: funcCode = `FUNC_OFT;
-                `BLZ_OP: funcCode = `FUNC_OFT;
             endcase
         end
 
