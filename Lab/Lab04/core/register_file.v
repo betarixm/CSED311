@@ -26,7 +26,7 @@ module register_file(read_out1, read_out2, read1, read2, write_reg, write_data, 
         end
     end
 
-    always @(*) begin
+    always @(posedge clk) begin
         if(pvs_write_en) begin // Write when last cycle (=pvs_write_en is enabled)
             if(reg_write && (0 <= write_reg && write_reg < `NUM_MAX_REGISTER)) begin
                 r[write_reg] = write_data;
