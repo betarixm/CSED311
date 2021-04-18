@@ -30,7 +30,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
     
 	//# Wires
 	//## Control
-	wire c__pc_write_not_cond;
+	wire c__pc_write_cond;
 	wire c__pc_write;
 	wire c__i_or_d;
 	wire c__mem_read;
@@ -160,7 +160,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.func_code(r__inst[`FUNC]),
 		.clk(clk),
 		.reset_n(reset_n),
-		.pc_write_cond(),
+		.pc_write_cond(c__pc_write_cond),
 		.pc_write(c__pc_write),
 		.i_or_d(c__i_or_d),
 		.mem_read(c__mem_read),
@@ -246,7 +246,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 			r__pc <= 0;
 		end
 		// PC
-		if ((c__pc_write || (w__bcond && c__pc_write_not_cond)) && c__pvs_write_en) begin
+		if ((c__pc_write || (!w__bcond && !c__pc_write_cond)) && c__pvs_write_en) begin
 			r__num_inst <= r__num_inst + 1;
 			r__pc <= w__mux__pc;
 		end

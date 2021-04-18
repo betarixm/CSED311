@@ -300,7 +300,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                     next_state = `STATE_EX_2;
                 end
                 else if (is_branch) begin
-                    if (bcond) begin  // branch not taken
+                    if (!bcond) begin  // branch not taken
                         next_state = `STATE_IF_1;
                     end
                     else begin  // branch taken
