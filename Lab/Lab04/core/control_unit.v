@@ -131,15 +131,17 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
         pc_write = `FALSE;
         pc_write_cond = `TRUE;
         pc_to_reg = `FALSE;
+        pvs_write_en = `FALSE;
         case (current_state)
             `STATE_IF_1: begin
                 // IR <- MEM[PC]
                 mem_read = `TRUE;
                 i_or_d = `PC_MEM;
             end
-            // `STATE_IF_2: begin
-            //     wait for memory read
-            // end
+            `STATE_IF_2: begin
+                // wait for memory read
+                mem_read = `TRUE;
+            end
             `STATE_ID: begin
                 // A <- RF[rs1(IR)]
                 // B <- RF[rs2(IR)]
@@ -207,7 +209,11 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end
             end
             `STATE_MEM_2: begin
-
+                if (is_load) begin
+                    mem_read = `TRUE;
+                end else if (is_store) begin
+                    mem_write = `TRUE;
+                end
             end
             `STATE_WB: begin
                 reg_write = `TRUE;

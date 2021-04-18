@@ -22,7 +22,7 @@ module register_file(read_out1, read_out2, read1, read2, write_reg, write_data, 
 
     initial begin
         for(i = 0; i < `NUM_MAX_REGISTER; i = i + 1) begin
-            r[i] = `WORD_SIZE'd0;
+            r[i] <= `WORD_SIZE'd0;
         end
     end
 

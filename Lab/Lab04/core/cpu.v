@@ -91,12 +91,14 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	reg [`WORD_SIZE-1:0] r__const_4;
 
 	//# Initial
-	assign w__data = c__pvs_write_en ? r__read_data_2 : w__data;
+	// TODOTODOTODOTODOTODOTODOTODOTODOTODO
+	// assign w__data = c__pvs_write_en ? r__read_data_2 : w__data;
 	
+
 	initial begin
-		r__pc = 0;
-		r__const_0 = 0;
-		r__const_4 = 4;
+		r__pc <= 0;
+		r__const_0 <= 0;
+		r__const_4 <= 4;
 	end
 	//# Modules
 	//## MEM
@@ -212,24 +214,24 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	always @(posedge clk) begin
 		// PC
 		if(c__pc_write || (w__bcond && c__pc_write_not_cond)) begin
-			r__pc = w__mux__pc;
+			r__pc <= w__mux__pc;
 		end
 
 		// Memory
-		if(!c__pvs_write_en) begin
+		if(c__mem_read) begin
 			if(c__i_or_d) begin
-				r__memory_register = w__data;
+				r__memory_register <= w__data;
 			end else begin
-				r__inst = w__data;
+				r__inst <= w__data;
 			end
 		end
 
 		// Register Latch
-		r__read_data_1 = w__read_data_1;
-		r__read_data_2 = w__read_data_2;
+		r__read_data_1 <= w__read_data_1;
+		r__read_data_2 <= w__read_data_2;
 
 		// ALU Latch
-		r__alu_out = w__alu_result;
+		r__alu_out <= w__alu_result;
 		
 	end
 endmodule
