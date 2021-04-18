@@ -7,7 +7,6 @@ module register_file(read_out1, read_out2, read1, read2, write_reg, write_data, 
     input [1:0] write_reg;
     input [15:0] write_data;
     input reg_write;
-    input reset_n;
     input pvs_write_en;
     input clk;
     output [15:0] read_out1;
@@ -28,17 +27,9 @@ module register_file(read_out1, read_out2, read1, read2, write_reg, write_data, 
     end
 
     always @(*) begin
-        if(pvs_write_en) { // Write when last cycle (=pvs_write_en is enabled)
+        if(pvs_write_en) begin // Write when last cycle (=pvs_write_en is enabled)
             if(reg_write && 0 <= write_reg && write_reg < `NUM_MAX_REGISTER) begin
                 r[write_reg] = write_data;
-            end
-        }
-    end
-
-    always @(posedge *) begin
-        if (reset_n) begin
-            for(i = 0; i < `NUM_MAX_REGISTER; i = i + 1) begin
-                r[i] = `WORD_SIZE'd0;
             end
         end
     end
