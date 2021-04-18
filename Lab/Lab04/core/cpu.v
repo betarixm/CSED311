@@ -95,7 +95,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 
 	//# Initial
 	// TODOTODOTODOTODOTODOTODOTODOTODOTODO
-	// assign w__data = c__pvs_write_en ? r__read_data_2 : w__data;
+	assign w__data = (c__pvs_write_en && c__mem_write) ? r__read_data_2 : `WORD_SIZE'bz;
 	
 	assign output_port = c__wwd ? r__read_data_1 : output_port;
 	assign num_inst = r__num_inst;

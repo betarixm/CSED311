@@ -228,11 +228,6 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end else if (is_store) begin
                     // MEM[ALUOut] <- B
                     mem_write = `TRUE;
-                    // PC <- PC + OFFSET
-                    alu_src_A = `PC_A;
-                    alu_src_B = `OFFSET_B;
-                    alu_op = `ADD_OP;
-                    pc_write = `TRUE;
                 end
             end
             `STATE_MEM_2: begin
@@ -241,6 +236,12 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                     mem_read = `TRUE;
                 end else if (is_store) begin
                     mem_write = `TRUE;
+                    // PC <- PC + OFFSET
+                    alu_src_A = `PC_A;
+                    alu_src_B = `OFFSET_B;
+                    alu_op = `ADD_OP;
+                    pc_write = `TRUE;
+                    pc_src = `ALU_PC;
                 end
             end
             `STATE_WB: begin
