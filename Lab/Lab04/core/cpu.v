@@ -1,3 +1,4 @@
+`include "env.v"
 `include "util.v"
 `include "memory.v"
 
@@ -37,6 +38,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire c__wwd;
 	wire c__pc_to_write;
 	wire c__new_inst;
+	wire c__pvs_write_en;
 
 	//## WB/MEM
 	wire [`WORD_SIZE-1:0] w__addr__pc;
@@ -81,13 +83,15 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	reg [`WORD_SIZE-1:0] r__const_0;
 	reg [`WORD_SIZE-1:0] r__const_4;
 
+	//# Initial
+	assign w__data = c__pvs_write_en ? r__read_data_2 : w__data;
 
 	//# Modules
 	//## MEM
 	mux2_1 mux__pc__alu_out(
 		.sel(c__i_or_d),
 		.i1(w__pc__mux),
-		.i2(w__aout__mux)
+		.i2(w__aout__mux),
 		.o(w__mux__memory));
 
 	memory Memory(
@@ -104,18 +108,18 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.sel(c__pc_source),
 		.i1(w__alu_result),
 		.i2(r__alu_out),
-		.o()
+		.o(w__mux__pc)
 	);
 
 	//## ID
 	register_file Registers(
-		.read1(r__inst[19:15]),
-		.read2(r__inst[24:20]),
-		.write_reg(r__inst[11:7]),
+		.read1(r__inst[`RS]),
+		.read2(r__inst[`RT]),
+		.write_reg(r__inst[`RD]),
 		.write_data(w__mux__write_data),
 		.reg_write(c__reg_write),
 		.reset_n(reset_n),
-		.pvs_write_en(pvs_write_en),
+		.pvs_write_en(c__pvs_write_en),
 		.clk(clk),
 		.read_out1(w__read_data_1),
 		.read_out2(w__read_data_2)
@@ -199,9 +203,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		end
 
 		// Memory
-		if(pvs_write_en) begin
-			w__data = r__read_data_2;
-		end else begin
+		if(!c__pvs_write_en) begin
 			if(c__i_or_d) begin
 				r__memory_register = w__data;
 			end else begin

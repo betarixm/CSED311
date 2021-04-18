@@ -1,7 +1,7 @@
 `timescale 1ns/1ns
 `define PERIOD1 100
 `define MEMORY_SIZE 256	//	size of memory is 2^8 words (reduced size)
-`define WORD_SIZE 16	//	instead of 2^16 words to reduce memory
+`define WORD_SIZE 16    //	instead of 2^16 words to reduce memory
 			//	requirements in the Active-HDL simulator 
 
 module memory(clk, reset_n, read_m, write_m, address, data);

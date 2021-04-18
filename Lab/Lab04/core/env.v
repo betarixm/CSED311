@@ -10,3 +10,5 @@
 `define RT 9:8
 `define RD 7:6
 `define FUNC 5:0
+
+`define IMMD_SIZE 8
