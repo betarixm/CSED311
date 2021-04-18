@@ -192,5 +192,29 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.o(w__mux__write_data)
 	);
 	
+	always @(posedge clk) begin
+		// PC
+		if(c__pc_write || (w__bcond && c__pc_write_not_cond)) begin
+			r__pc = w__mux__pc;
+		end
 
+		// Memory
+		if(pvs_write_en) begin
+			w__data = r__read_data_2;
+		end else begin
+			if(c__i_or_d) begin
+				r__memory_register = w__data;
+			end else begin
+				r__inst = w__data;
+			end
+		end
+
+		// Register Latch
+		r__read_data_1 = w__read_data_1;
+		r__read_data_2 = w__read_data_2;
+
+		// ALU Latch
+		r__alu_out = w__alu_result;
+		
+	end
 endmodule
