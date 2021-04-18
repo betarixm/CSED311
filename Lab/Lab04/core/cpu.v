@@ -44,7 +44,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire c__reg_write;
 	wire [1:0] c__reg_write_dest;
 	wire c__wwd;
-	wire c__pc_to_write;
+	wire c__pc_to_reg;
 	wire c__new_inst;
 	wire c__pvs_write_en;
 
@@ -67,6 +67,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire [`WORD_SIZE-1:0] w__read_data_1;
 	wire [`WORD_SIZE-1:0] w__read_data_2;
 	wire [`REG_SIZE-1:0] w__write_reg;
+	wire [`WORD_SIZE-1:0] w__mux__write_data;
 	wire [`WORD_SIZE-1:0] w__alu_a;
 	wire [`WORD_SIZE-1:0] w__alu_b;
 
@@ -77,7 +78,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire [`WORD_SIZE-1:0] w__alu_result;
 
 	//## MEM/WB
-	wire [`WORD_SIZE-1:0] w__mux__write_data;
+	wire [`WORD_SIZE-1:0] w__write_data;
     wire [4-1:0] w__alu__func_code;
     wire [2-1:0] w__alu__branch_type;
 
@@ -143,6 +144,13 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	);
 
 	//## ID
+	mux2_1 mux__reg_data(
+		.sel(c__pc_to_reg),
+		.i1(w__write_data),
+		.i2(r__pc + `WORD_SIZE'b1),
+		.o(w__mux__write_data)
+	);
+
 	register_file Registers(
 		.read1(r__inst[`RS]),
 		.read2(r__inst[`RT]),
@@ -167,7 +175,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.mem_to_reg(c__mem_to_reg),
 		.mem_write(c__mem_write),
 		.ir_write(c__ir_write),
-		.pc_to_reg(c__pc_to_write),
+		.pc_to_reg(c__pc_to_reg),
 		.pc_src(c__pc_source),
 		.halt(is_halted),
 		.wwd(c__wwd),
@@ -226,7 +234,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.sel(c__mem_to_reg),
 		.i1(r__alu_out),
 		.i2(r__memory_register),
-		.o(w__mux__write_data)
+		.o(w__write_data)
 	);
 
 	always @(*) begin

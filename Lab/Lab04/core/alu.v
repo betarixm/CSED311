@@ -40,8 +40,8 @@ module alu (A, B, func_code, branch_type, C, overflow_flag, bcond);
         case (branch_type)
             `BRANCH_NE: bcond = (C != 0);
             `BRANCH_EQ: bcond = (C == 0);
-            `BRANCH_GZ: bcond = (C > -B);
-            `BRANCH_LZ: bcond = (C < -B);
+            `BRANCH_GZ: bcond = ($signed(A) >  0);
+            `BRANCH_LZ: bcond = ($signed(A) <  0);
         endcase
     end
 endmodule

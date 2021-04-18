@@ -184,7 +184,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                     alu_src_B = `IMMD_B;
                 end
                 if (is_jwrite) begin
-                    // RF[$2] <- PC
+                    // RF[$2] <- ALUOut
                     pvs_write_en = `TRUE;
                     reg_write = `TRUE;
                     reg_write_dest = `TWO_W;
