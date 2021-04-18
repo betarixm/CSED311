@@ -34,12 +34,16 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire c__alu_src_a;
 	wire c__alu_src_b;
 	wire c__reg_write;
+	wire c__wwd;
+	wire c__pc_to_write;
+	wire c__new_inst;
 
 	//## WB/MEM
 	wire [`WORD_SIZE-1:0] w__addr__pc;
 	wire [`WORD_SIZE-1:0] w__pc__mux;
 	wire [`WORD_SIZE-1:0] w__aout__mux;
 	wire [`WORD_SIZE-1:0] w__mux__memory;
+	wire [`WORD_SIZE-1:0] w__data;
 
 	//## MEM/IF
 	wire [`WORD_SIZE-1:0] w__memory__inst;
@@ -56,18 +60,26 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire [`WORD_SIZE-1:0] w__alu_b;
 
 	//## EX/MEM
+	wire w__bcond;
+	wire w__overflow_flag;
+	wire [`WORD_SIZE-1:0] w__mux__pc;
+	wire [`WORD_SIZE-1:0] w__alu_result;
 
 	//## MEM/WB
 	wire [`WORD_SIZE-1:0] w__mux__write_data;
-
+    wire [4-1:0] w__alu__func_code;
+    wire [2-1:0] w__alu__branch_type;
 
 	//# Registers
-	reg [`WORD_SIZE-1:0] pc;
+	reg [`WORD_SIZE-1:0] r__pc;
 	reg [`WORD_SIZE-1:0] r__memory_register;
 	reg [`WORD_SIZE-1:0] r__read_data_1;
 	reg [`WORD_SIZE-1:0] r__read_data_2;
 	reg [`WORD_SIZE-1:0] r__alu_out;
 	reg [`WORD_SIZE-1:0] r__inst;
+
+	reg [`WORD_SIZE-1:0] r__const_0;
+	reg [`WORD_SIZE-1:0] r__const_4;
 
 
 	//# Modules
@@ -84,10 +96,16 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.read_m(c__mem_read),
 		.write_m(c__mem_write),
 		.address(w__mux__memory),
-		.data()
+		.data(w__data)
 	);
 
 	//## IF
+	mux2_1 mux__alu_result__alu_out(
+		.sel(c__pc_source),
+		.i1(w__alu_result),
+		.i2(r__alu_out),
+		.o()
+	);
 
 	//## ID
 	register_file Registers(
@@ -104,8 +122,8 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	);
 
 	control_unit Control(
-		.opcode(),
-		.func_code(),
+		.opcode(r__inst[`OPCODE]),
+		.func_code(r__inst[`FUNC]),
 		.clk(clk),
 		.reset_n(reset_n),
 		.pc_write_cond(),
@@ -115,15 +133,15 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.mem_to_reg(c__mem_to_reg),
 		.mem_write(c__mem_write),
 		.ir_write(c__ir_write),
-		.pc_to_reg(),
+		.pc_to_reg(c__pc_to_write),
 		.pc_src(c__pc_source),
-		.halt(),
-		.wwd(),
-		.new_inst(),
-		.reg_write(),
-		.alu_src_A(),
-		.alu_src_B(),
-		.alu_op()
+		.halt(is_halted),
+		.wwd(c__wwd),
+		.new_inst(c__new_inst),
+		.reg_write(c__reg_write),
+		.alu_src_A(c__alu_src_a),
+		.alu_src_B(c__alu_src_b),
+		.alu_op(c__alu_op)
 	);
 
 	sign_extender Imm_extend(
@@ -134,7 +152,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	//## EX
 	mux2_1 mux__alu_a(
 		.sel(c__alu_src_a),
-		.i1(pc),
+		.i1(r__pc),
 		.i2(r__read_data_1),
 		.o(w__alu_a)
 	);
@@ -142,29 +160,29 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	mux4_1 mux__alu_b(
 		.sel(c__alu_src_b),
 		.i1(r__read_data_2),
-		.i2(4),
-		.i3(), //TODO
-		.i4(),
+		.i2(r__const_4),
+		.i3(w__immext__mux),
+		.i4(r__const_0),
 		.o(w__alu_b)
 	);
 
 	alu_control_unit ALU_control(
-		.funct(),
-		.opcode(),
-		.ALUOp(), 
-		.clk(), 
-		.funcCode(),
-		.branchType()
+		.funct(r__inst[`FUNC]),
+		.opcode(r__inst[`OPCODE]),
+		.ALUOp(c__alu_op), 
+		.clk(clk), 
+		.funcCode(w__alu__func_code),
+		.branchType(w__alu__branch_type)
 	);
 
 	alu ALU(
-		.A(), 
-		.B(), 
-		.func_code(), 
-		.branch_type(), 
-		.C(), 
-		.overflow_flag(), 
-		.bcond());
+		.A(w__alu_a), 
+		.B(w__alu_b), 
+		.func_code(w__alu__func_code), 
+		.branch_type(w__alu__branch_type), 
+		.C(w__alu_result), 
+		.overflow_flag(w__overflow_flag), 
+		.bcond(w__bcond));
 
 	//## WB
 	mux2_1 mux__alu_out__reg_memory(
