@@ -1,3 +1,4 @@
+`include "env.v"
 `include "opcodes.v"
 
 `define NumBits 16
@@ -23,7 +24,7 @@ module alu (A, B, func_code, branch_type, C, overflow_flag, bcond);
             `FUNC_SHR:  C = $signed(A) >>> 1;
             `FUNC_ZRO:  C = `NumBits'd0;
             `FUNC_IDN:  C = A;
-            `FUNC_LHI:  C = {A[`ADDR_SIZE-1:0],`ADDR_SIZE'b0};
+            `FUNC_LHI:  C = {B[`ADDR_SIZE-1:0],`ADDR_SIZE'b0};
             `FUNC_TGT:  C = {A[`WORD_SIZE-1:`ADDR_SIZE],B[`ADDR_SIZE-1:0]};
             `FUNC_OFT:  C = A + B[`IMMD_SIZE-1:0] + 1;
         endcase

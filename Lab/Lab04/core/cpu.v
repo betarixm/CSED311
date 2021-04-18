@@ -42,6 +42,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire [1:0] c__alu_src_a;
 	wire [1:0] c__alu_src_b;
 	wire c__reg_write;
+	wire [1:0] c__reg_write_dest;
 	wire c__wwd;
 	wire c__pc_to_write;
 	wire c__new_inst;
@@ -65,6 +66,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	wire [`WORD_SIZE-1:0] w__immext__mux;
 	wire [`WORD_SIZE-1:0] w__read_data_1;
 	wire [`WORD_SIZE-1:0] w__read_data_2;
+	wire [`REG_SIZE-1:0] w__write_reg;
 	wire [`WORD_SIZE-1:0] w__alu_a;
 	wire [`WORD_SIZE-1:0] w__alu_b;
 
@@ -88,17 +90,19 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	reg [`WORD_SIZE-1:0] r__inst;
 
 	reg [`WORD_SIZE-1:0] r__const_0;
-	reg [`WORD_SIZE-1:0] r__const_4;
+	reg [`WORD_SIZE-1:0] r__const_1;
 
 	//# Initial
 	// TODOTODOTODOTODOTODOTODOTODOTODOTODO
 	// assign w__data = c__pvs_write_en ? r__read_data_2 : w__data;
 	
+	assign output_port = c__wwd ? r__read_data_1 : 0;
 
 	initial begin
-		r__pc <= 0;
 		r__const_0 <= 0;
-		r__const_4 <= 4;
+		r__const_1 <= 1;
+
+		r__pc <= 0;
 	end
 	//# Modules
 	//## MEM
@@ -125,11 +129,21 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.o(w__mux__pc)
 	);
 
+
+	mux4_1_reg mux__write_reg(
+		.sel(c__reg_write_dest),
+		.i1(r__inst[`RD]),
+		.i2(r__inst[`RT]),
+		.i3(`REG_SIZE'd2),
+		.i4(`REG_SIZE'd0),
+		.o(w__write_reg)
+	);
+
 	//## ID
 	register_file Registers(
 		.read1(r__inst[`RS]),
 		.read2(r__inst[`RT]),
-		.write_reg(r__inst[`RD]),
+		.write_reg(w__write_reg),
 		.write_data(w__mux__write_data),
 		.reg_write(c__reg_write),
 		.pvs_write_en(c__pvs_write_en),
@@ -156,6 +170,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.wwd(c__wwd),
 		.new_inst(c__new_inst),
 		.reg_write(c__reg_write),
+		.reg_write_dest(c__reg_write_dest),
 		.alu_src_A(c__alu_src_a),
 		.alu_src_B(c__alu_src_b),
 		.alu_op(c__alu_op),
@@ -179,7 +194,7 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	mux4_1 mux__alu_b(
 		.sel(c__alu_src_b),
 		.i1(r__read_data_2),
-		.i2(r__const_4),
+		.i2(r__const_1),
 		.i3(w__immext__mux),
 		.i4(r__const_0),
 		.o(w__alu_b)
@@ -212,6 +227,9 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	);
 	
 	always @(posedge clk) begin
+		if (!reset_n) begin
+			r__pc <= 0;
+		end
 		// PC
 		if(c__pc_write || (w__bcond && c__pc_write_not_cond)) begin
 			r__pc <= w__mux__pc;
@@ -232,6 +250,5 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 
 		// ALU Latch
 		r__alu_out <= w__alu_result;
-		
 	end
 endmodule

@@ -1,4 +1,4 @@
-`include "opcodes.v"
+`include "env.v"
 
 module sign_extender (immediate, sign_extended);
     input [`IMMD_SIZE-1:0] immediate;
