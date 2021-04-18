@@ -230,11 +230,11 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 	
 	always @(posedge clk) begin
 		if (!reset_n) begin
-			r__num_inst <= 1;
+			r__num_inst <= 0;
 			r__pc <= 0;
 		end
 		// PC
-		if(c__pc_write || (w__bcond && c__pc_write_not_cond)) begin
+		if ((c__pc_write || (w__bcond && c__pc_write_not_cond)) && c__pvs_write_en) begin
 			r__num_inst <= r__num_inst + 1;
 			r__pc <= w__mux__pc;
 		end

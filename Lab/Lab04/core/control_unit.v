@@ -69,6 +69,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
         is_lhi = `FALSE;
         is_wwd = `FALSE;
         is_halt = `FALSE;
+        pvs_write_en = `FALSE;
         case (opcode)
             `ALU_OP,
             `JPR_OP,
@@ -138,10 +139,10 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
         mem_read = `FALSE;
         mem_write = `FALSE;
         mem_to_reg = `FALSE;
+        reg_write = `FALSE;
         pc_write = `FALSE;
         pc_write_cond = `TRUE;
         pc_to_reg = `FALSE;
-        pvs_write_en = `FALSE;
         reg_write_dest = `RD_W;
         case (current_state)
             `STATE_IF_1: begin
@@ -162,12 +163,6 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 alu_src_A = `PC_A;
                 alu_src_B = `OFFSET_B;
                 alu_op = `ADD_OP;
-                if (is_wwd) begin
-                    wwd = `TRUE;
-                    // PC <- PC + OFFSET
-                    pc_write = `TRUE;
-                    pc_src = `ALU_PC;
-                end
             end
             `STATE_EX_1: begin
                 // ALUOUT <- REG O REG
@@ -181,23 +176,33 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end
                 if (is_rtype | is_branch) begin
                     alu_src_B = `REG_B;
-                end else if (is_itype | is_load | is_store | is_jrel) begin
+                end else if (is_itype | is_load | is_store | is_jrel | is_lhi) begin
                     alu_src_B = `IMMD_B;
                 end
                 if (is_jwrite) begin
                     // RF[$2] <- PC
+                    pvs_write_en = `TRUE;
                     reg_write = `TRUE;
                     reg_write_dest = `TWO_W;
                     pc_to_reg = `TRUE;
                 end
                 if (is_branch) begin
                     // PC <- ALUOut if branch not taken (need to determine bcond also)
+                    pvs_write_en = `TRUE;
                     alu_op = `SUB_OP;  // for bcond
                     pc_write_cond = `FALSE;
                     pc_src = `ALUOut_PC;
                 end
+                if (is_wwd) begin
+                    wwd = `TRUE;
+                    // PC <- ALUOut
+                    pvs_write_en = `TRUE;
+                    pc_write = `TRUE;
+                    pc_src = `ALUOut_PC;
+                end
             end
             `STATE_EX_2: begin
+                pvs_write_en = `TRUE;
                 if (is_branch) begin
                     // PC <- OFT(PC, IMMD)
                     alu_src_A = `PC_A;
@@ -213,6 +218,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end
             end
             `STATE_MEM_1: begin
+                pvs_write_en = `TRUE;
                 i_or_d = `ALUOut_MEM;
                 if (is_load) begin
                     // MDR <- MEM[ALUOut]
@@ -228,6 +234,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end
             end
             `STATE_MEM_2: begin
+                pvs_write_en = `TRUE;
                 if (is_load) begin
                     mem_read = `TRUE;
                 end else if (is_store) begin
@@ -235,12 +242,13 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end
             end
             `STATE_WB: begin
+                pvs_write_en = `TRUE;
                 reg_write = `TRUE;
                 reg_write_dest = `RD_W;
                 mem_to_reg = `FALSE;
                 // default:
                 // RF[rd(IR)] <- ALUOut
-                if (is_lhi) begin
+                if (is_lhi | is_itype) begin
                     // RF[rt(IR)] <- ALUOut
                     reg_write_dest = `RT_W;
                 end
@@ -268,7 +276,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 if (is_halt) begin
                     next_state = `STATE_IF_1;
                 end
-                else if (is_jrel) begin
+                else if (is_jrel | is_lhi) begin
                     next_state = `STATE_EX_1;
                 end
                 else begin
@@ -276,11 +284,10 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end
             end
             `STATE_ID: begin
-                if (is_wwd) next_state = `STATE_IF_1;
-                else next_state = `STATE_EX_1; 
+                next_state = `STATE_EX_1; 
             end
             `STATE_EX_1: begin
-                if (is_rtype | is_itype) begin
+                if (is_rtype | is_itype | is_lhi) begin
                     next_state = `STATE_WB;
                 end
                 else if (is_load | is_store) begin
@@ -297,12 +304,15 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                         next_state = `STATE_EX_2;
                     end
                 end
+                else if (is_wwd) begin
+                    next_state = `STATE_IF_1;
+                end
             end
             `STATE_EX_2: begin
                 if (is_branch | is_jump) begin
                     next_state = `STATE_IF_1;
                 end
-                else if (is_itype | is_rtype | is_jwrite | wwd | halt) begin
+                else if (is_itype | is_rtype | is_jwrite) begin
                     next_state = `STATE_WB;
                 end
                 else if (is_load | is_store) begin
