@@ -26,12 +26,13 @@
 `define ALU_PC    1'b0
 `define ALUOut_PC 1'b1
 
-module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_or_d, mem_read, mem_to_reg, mem_write, ir_write, pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_src_A, alu_src_B, alu_op);
+module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_or_d, mem_read, mem_to_reg, mem_write, ir_write, pc_to_reg, pc_src, halt, wwd, new_inst, reg_write, alu_src_A, alu_src_B, alu_op, pvs_write_en, bcond);
     input [3:0] opcode;
     input [5:0] func_code;
     input clk, reset_n;
+    input bcond;
 
-    output reg pc_write_not_cond, pc_write, i_or_d, mem_read, mem_to_reg, mem_write, ir_write, pc_src;
+    output reg pc_write_cond, pc_write, i_or_d, mem_read, mem_to_reg, mem_write, ir_write, pc_src, pvs_write_en;
     //additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD. new_inst: new instruction start
     output reg pc_to_reg, halt, wwd, new_inst;
     output reg [1:0] reg_write, alu_src_A, alu_src_B;
@@ -128,7 +129,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
         mem_write = `FALSE;
         mem_to_reg = `FALSE;
         pc_write = `FALSE;
-        pc_write_not_cond = `FALSE;
+        pc_write_cond = `TRUE;
         pc_to_reg = `FALSE;
         case (current_state)
             `STATE_IF_1: begin
@@ -136,10 +137,9 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 mem_read = `TRUE;
                 i_or_d = `PC_MEM;
             end
-            `STATE_IF_2: begin
-                // wait for memory read
-                ;
-            end
+            // `STATE_IF_2: begin
+            //     wait for memory read
+            // end
             `STATE_ID: begin
                 // A <- RF[rs1(IR)]
                 // B <- RF[rs2(IR)]
@@ -154,7 +154,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 //     <- REG O IMMD
                 //     <- PC O IMMD
                 alu_op = `ALU_OP;
-                if (is_rtype | is_itype | is_load | is_store | is_jreg | is_branch | is_wwd | is_halt) begin
+                if (is_rtype | is_itype | is_load | is_store | is_jreg | is_branch | wwd | halt) begin
                     alu_src_A = `REG_A;
                 end else if (is_jrel) begin
                     alu_src_A = `PC_A;
@@ -172,7 +172,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 if (is_branch) begin
                     // PC <- ALUOut if branch not taken (need to determine bcond also)
                     alu_op = `SUB_OP;  // for bcond
-                    pc_write_not_cond = `TRUE;
+                    pc_write_cond = `FALSE;
                     pc_src = `ALUOut_PC;
                 end
             end
@@ -207,8 +207,7 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 end
             end
             `STATE_MEM_2: begin
-                // wait for memory interaction
-                ;
+
             end
             `STATE_WB: begin
                 reg_write = `TRUE;
@@ -225,62 +224,62 @@ module control_unit(opcode, func_code, clk, reset_n, pc_write_cond, pc_write, i_
                 pc_write = `TRUE;
             end
         endcase
-    end
 
-    /////////////////////
-    // calculate state //
-    /////////////////////
-    case(current_state)
-        `STATE_IF_1: next_state = `STATE_IF_2;
-        `STATE_IF_2: begin
-            if (is_jrel) begin
-                next_state = `STATE_EX_1;
+        /////////////////////
+        // calculate state //
+        /////////////////////
+        case(current_state)
+            `STATE_IF_1: begin 
+                next_state = `STATE_IF_2;
             end
-            else begin
-                next_state = `STATE_ID;
-            end
-        end
-        `STATE_ID: next_state = `STATE_EX_1;
-        `STATE_EX_1: begin
-            next_state = `STATE_MEM_1;
-            if (is_jump) begin
-                next_state = `STATE_EX_2;
-            end
-            else if (is_branch) begin
-                if (PVS_write_en) begin  // branch not taken
-                    next_state = `STATE_IF_1;
+            `STATE_IF_2: begin
+                if (is_jrel) begin
+                    next_state = `STATE_EX_1;
                 end
-                else begin  // branch taken
+                else begin
+                    next_state = `STATE_ID;
+                end
+            end
+            `STATE_ID: next_state = `STATE_EX_1;
+            `STATE_EX_1: begin
+                next_state = `STATE_MEM_1;
+                if (is_jump) begin
                     next_state = `STATE_EX_2;
                 end
+                else if (is_branch) begin
+                    if (bcond) begin  // branch not taken
+                        next_state = `STATE_IF_1;
+                    end
+                    else begin  // branch taken
+                        next_state = `STATE_EX_2;
+                    end
+                end
             end
-        end
-        `STATE_EX_2: begin
-            if (is_branch | is_jump) begin
+            `STATE_EX_2: begin
+                if (is_branch | is_jump) begin
+                    next_state = `STATE_IF_1;
+                end
+                else if (is_itype | is_rtype | is_jwrite | wwd | halt) begin
+                    next_state = `STATE_WB;
+                end
+                else if (is_load | is_store) begin
+                    next_state = `STATE_MEM_1;
+                end
+            end
+            `STATE_MEM_1: next_state = `STATE_MEM_2;
+            `STATE_MEM_2: begin
+                if (is_load) begin
+                    next_state = `STATE_WB;
+                end
+                else if (is_store) begin
+                    next_state = `STATE_IF_1;
+                end
+            end
+            `STATE_WB: begin
                 next_state = `STATE_IF_1;
             end
-            else if (is_itype | is_rtype | is_jwrite | is_wwd | is_halt) begin
-                next_state = `STATE_WB;
-            end
-            else if (is_load | is_store) begin
-                next_state = `STATE_MEM_1;
-            end
-        end
-        `STATE_MEM_1: next_state = `STATE_MEM_2;
-        `STATE_MEM_2: begin
-            if (is_load) begin
-                next_state = `STATE_WB;
-            end
-            else if (is_store & PVS_write_en) begin
-                next_state = `STATE_IF_1;
-            end
-        end
-        `STATE_WB: begin
-            if (PVS_write_en) begin
-                next_state = `STATE_IF_1;
-            end
-        end
-    endcase
+        endcase
+    end
 
     //////////////////
     // update state //

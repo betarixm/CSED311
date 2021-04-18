@@ -145,7 +145,9 @@ module cpu(clk, reset_n, read_m, write_m, address, data, num_inst, output_port, 
 		.reg_write(c__reg_write),
 		.alu_src_A(c__alu_src_a),
 		.alu_src_B(c__alu_src_b),
-		.alu_op(c__alu_op)
+		.alu_op(c__alu_op),
+		.pvs_write_en(c__pvs_write_en),
+		.bcond(w__bcond)
 	);
 
 	sign_extender Imm_extend(
