@@ -52,8 +52,3 @@
 `define   BRANCH_EQ   2'd1
 `define   BRANCH_GZ   2'd2
 `define   BRANCH_LZ   2'd3
-
-`define   WORD_SIZE   16
-`define   ADDR_SIZE   12
-`define   IMMD_SIZE   8
-`define   NUM_REGS   4

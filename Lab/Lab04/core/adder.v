@@ -1,4 +1,4 @@
-`include "opcodes.v"
+`include "env.v"
 
 module adder (adder_input0, adder_input1, adder_output);
     input [`WORD_SIZE-1:0] adder_input0;

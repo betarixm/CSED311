@@ -10,3 +10,8 @@
 `define RT 9:8
 `define RD 7:6
 `define FUNC 5:0
+
+`define   WORD_SIZE   16
+`define   ADDR_SIZE   12
+`define   IMMD_SIZE    8
+`define   REG_SIZE     2
