@@ -45,6 +45,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire c__wwd;
     wire c__pc_to_reg;
     wire c__new_inst;
+    wire c__hdu_is_stall;
+    wire c__bp_select;
+    wire c__next_pc;
 
     //## WB/MEM
     wire [`WORD_SIZE-1:0] w__addr__pc;
@@ -165,7 +168,18 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .o(r__next_pc)
     );
 
-    // TODO: add mux for pc
+    branch_predictor BP(
+        .clk(clk),
+        .reset_n(reset_n),
+        .is_flush(c__hdu_is_stall),
+        .is_BJ_type(
+                (0 <= r__if_id__inst[`OPCODE] && r__if_id__inst[`OPCODE] <= 3) || 
+                (9 <= r__if_id__inst[`OPCODE] && r__if_id__inst[`OPCODE] <= 10)
+            ),
+        .caculated_pc(w__branch_address)),
+        .current_PC(r__if_id__pc),
+        .next_PC(c__next_pc)
+    )
 
 
     ////////// ID ///////////
@@ -294,7 +308,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
 
     always @(posedge clk) begin
-        ///////////////////////////////
         // update Pipeline Registers
         // - MEM/WB
         r__mem_wb__memory_read_data <= w__data;
@@ -334,6 +347,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__if_id__inst <= r__inst;
         r__if_id__pc <= r__pc;
         r__if_id__next_pc <= r__next_pc;
+
+        // Update PC
+        if(!c__hdu_is_stall) begin
+            r__pc <= c__next_pc;
+        end
     end
 
 
