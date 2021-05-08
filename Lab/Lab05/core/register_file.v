@@ -18,8 +18,8 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 
     integer i;
 
-    assign read_out1 = r[read1];
-    assign read_out2 = r[read2];
+    assign read_out1 = read1==dest ? write_data : r[read1];
+    assign read_out2 = read2==dest ? write_data : r[read2];
 
     initial begin
         for(i = 0; i < `NUM_MAX_REGISTER; i = i + 1) begin
@@ -29,8 +29,8 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 
     always @(posedge clk) begin
         if(reg_write && (0 <= dest && dest < `NUM_MAX_REGISTER)) begin
-            r[dest] = write_data;
+            r[dest] <= write_data;
         end
     end
-
+    
 endmodule

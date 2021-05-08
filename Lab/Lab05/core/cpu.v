@@ -105,6 +105,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     // from ID/EX
     reg [`WORD_SIZE-1:0] r__id_ex__read_data_1, r__ex_mem__read_data_1, r__mem_wb__read_data_1; // for wwd
     reg [`WORD_SIZE-1:0] r__id_ex__read_data_2;
+    reg [`WORD_SIZE-1:0] r__id_ex__mux_alu_src_b, r__ex_mem__mux_alu_src_b;
     reg [`WORD_SIZE-1:0] r__id_ex__imm_ext;
     reg [`WORD_SIZE-1:0] r__id_ex__opcode;
     reg [`WORD_SIZE-1:0] r__id_ex__funct;
@@ -152,15 +153,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     ////////// IF ///////////
 
-    // TODO: check for new memory input & output
-    memory Memory(
-        .clk(clk),
-        .reset_n(reset_n),
-        .read_m(c__mem_read),
-        .write_m(c__mem_write),
-        .address(w__mux__memory),
-        .data(w__data)
-    );
+    /// Memory ///
+    /// Instruction memory is concatenated to Data memory
+    /// See bottom, MEM stage.
 
     adder Adder(
         .i1(r__pc),
@@ -281,20 +276,25 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .B(w__mux_alu_src_b), 
         .func_code(r__id_ex__func_code),
         .C(w__alu_out), 
-        .overflow_flag(w__overflow_flag), 
+        .overflow_flag(w__overflow_flag)
+    );
 
 
     ////////////// MEM ////////////////
 
-    // TODO: check for new memory input output
     Memory memory(
         .clk(clk),
         .reset_n(reset_n),
-        .read_m(rc__ex_mem__mem_read),
-        .write_m(rc__ex_mem__mem_write),
-        .address(r__ex_mem__alu_out),
-        .data(w__data)
+        .read_m1(~is_flush),
+        .address1(r__pc),
+        .data1(r__inst),
+        .read_m2(rc__ex_mem__mem_read),
+        .write_m2(rc__ex_mem__mem_write),
+        .address2(r__ex_mem__alu_out),
+        .data2(w__data)
     );
+
+    assign w__data = (rc__ex_mem__mem_write) ? r__read_data_2 : `WORD_SIZE'bz;
 
 
     /////////////// WB ////////////////
@@ -318,9 +318,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
         // - EX/MEM
         r__ex_mem__alu_out <= w__alu_out;
+        
         r__ex_mem__rd <= r__id_ex__rd;
         r__ex_mem__rt <= r__id_ex__rt;
         r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
+        r__ex_mem__mux_alu_src_b <= r__id_ex__mux_alu_src_b;
         rc__ex_mem__mem_read <= rc__id_ex__mem_read;
         rc__ex_mem__mem_write <= rc__id_ex__mem_write;
         rc__ex_mem__mem_to_reg <= rc__id_ex__mem_to_reg;
@@ -330,6 +332,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         // - ID/EX
         r__id_ex__read_data_1 <= w__read_data_1;
         r__id_ex__read_data_2 <= w__read_data_2;
+        r__id_ex__mux_alu_src_b <= w__mux_alu_src_b;
         r__id_ex__imm_ext <= w__imm_ext;
         r__id_ex__func_code <= w__func_code;
         r__id_ex__rd <= r__if_id__inst[`RD];
