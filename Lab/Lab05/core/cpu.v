@@ -135,6 +135,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     // TODO: manage halt -> doing with halt pipeline register
     // TODO: link output_port -> doing with wwd, read_data_1 pipeline register
+    assign is_halted = rc__mem_wb__halt;
+    assign output_port = rc__mem_wb__wwd ? r__mem_wb__read_data_1 : `WORD_SIZE'b0;
 
     assign num_inst = r__num_inst;
 
