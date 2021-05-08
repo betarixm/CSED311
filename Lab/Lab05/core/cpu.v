@@ -278,7 +278,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     ////////////// MEM ////////////////
 
     // TODO: check for new memory input output
-    memory Memory(
+    Memory memory(
         .clk(clk),
         .reset_n(reset_n),
         .read_m(rc__ex_mem__mem_read),
