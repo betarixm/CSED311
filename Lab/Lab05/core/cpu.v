@@ -102,6 +102,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     // from ID/EX
     reg [`WORD_SIZE-1:0] r__id_ex__read_data_1, r__ex_mem__read_data_1, r__mem_wb__read_data_1; // for wwd
     reg [`WORD_SIZE-1:0] r__id_ex__read_data_2;
+    reg [`WORD_SIZE-1:0] r__id_ex__mux_alu_src_b, r__ex_mem__mux_alu_src_b;
     reg [`WORD_SIZE-1:0] r__id_ex__imm_ext;
     reg [`WORD_SIZE-1:0] r__id_ex__opcode;
     reg [`WORD_SIZE-1:0] r__id_ex__funct;
@@ -284,6 +285,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .data2(w__data)
     );
 
+    assign w__data = (rc__ex_mem__mem_write) ? r__read_data_2 : `WORD_SIZE'bz;
+
 
     /////////////// WB ////////////////
     mux2_1 mux__alu_out__reg_memory(
@@ -307,9 +310,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
         // - EX/MEM
         r__ex_mem__alu_out <= w__alu_out;
+        
         r__ex_mem__rd <= r__id_ex__rd;
         r__ex_mem__rt <= r__id_ex__rt;
         r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
+        r__ex_mem__mux_alu_src_b <= r__id_ex__mux_alu_src_b;
         rc__ex_mem__mem_read <= rc__id_ex__mem_read;
         rc__ex_mem__mem_write <= rc__id_ex__mem_write;
         rc__ex_mem__mem_to_reg <= rc__id_ex__mem_to_reg;
@@ -319,6 +324,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         // - ID/EX
         r__id_ex__read_data_1 <= w__read_data_1;
         r__id_ex__read_data_2 <= w__read_data_2;
+        r__id_ex__mux_alu_src_b <= w__mux_alu_src_b;
         r__id_ex__imm_ext <= w__imm_ext;
         r__id_ex__func_code <= w__func_code;
         r__id_ex__rd <= r__if_id__inst[`RD];
