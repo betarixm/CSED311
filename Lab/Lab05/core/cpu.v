@@ -174,7 +174,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .caculated_pc(w__branch_address)),
         .current_PC(r__if_id__pc),
         .next_PC(c__next_pc)
-    )
+    );
 
 
     ////////// ID ///////////
