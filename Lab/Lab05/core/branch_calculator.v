@@ -9,7 +9,7 @@ module branch_calculator (A, B, PC, imm, branch_type, next_pc)
     
     reg bcond;
 
-    assign C = (bcond) ? (PC + imm) : (PC + 4);
+    assign next_pc = (bcond) ? (PC + imm) : (PC + 4);
 
     always @(*) begin
         case (branch_type)
