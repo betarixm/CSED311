@@ -149,15 +149,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     ////////// IF ///////////
 
-    // TODO: check for new memory input & output
-    memory Memory(
-        .clk(clk),
-        .reset_n(reset_n),
-        .read_m(c__mem_read),
-        .write_m(c__mem_write),
-        .address(w__mux__memory),
-        .data(w__data)
-    );
+    /// Memory ///
+    /// Instruction memory is concatenated to Data memory
+    /// See bottom, MEM stage.
 
     adder Adder(
         .i1(r__pc),
@@ -272,19 +266,22 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .B(w__mux_alu_src_b), 
         .func_code(r__id_ex__func_code),
         .C(w__alu_out), 
-        .overflow_flag(w__overflow_flag), 
+        .overflow_flag(w__overflow_flag)
+    );
 
 
     ////////////// MEM ////////////////
 
-    // TODO: check for new memory input output
     Memory memory(
         .clk(clk),
         .reset_n(reset_n),
-        .read_m(rc__ex_mem__mem_read),
-        .write_m(rc__ex_mem__mem_write),
-        .address(r__ex_mem__alu_out),
-        .data(w__data)
+        .read_m1(~is_flush),
+        .address1(r__pc),
+        .data1(r__inst),
+        .read_m2(rc__ex_mem__mem_read),
+        .write_m2(rc__ex_mem__mem_write),
+        .address2(r__ex_mem__alu_out),
+        .data2(w__data)
     );
 
 
