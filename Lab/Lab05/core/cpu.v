@@ -47,7 +47,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire c__new_inst;
     wire c__hdu_is_stall;
     wire c__bp_select;
-    wire c__next_pc;
+    wire c__is_bj;
 
     //## WB/MEM
     wire [`WORD_SIZE-1:0] w__addr__pc;
@@ -163,20 +163,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .o(r__next_pc)
     );
 
-    branch_predictor BP(
-        .clk(clk),
-        .reset_n(reset_n),
-        .is_flush(c__hdu_is_stall),
-        .is_BJ_type(
-                (0 <= r__if_id__inst[`OPCODE] && r__if_id__inst[`OPCODE] <= 3) || 
-                (9 <= r__if_id__inst[`OPCODE] && r__if_id__inst[`OPCODE] <= 10)
-            ),
-        .caculated_pc(w__branch_address)),
-        .current_PC(r__if_id__pc),
-        .next_PC(c__next_pc)
-    );
-
-
     ////////// ID ///////////
 
     mux4_1_reg mux__write_reg(
@@ -223,6 +209,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .reg_write_dest(c__reg_write_dest),
         .func_code(w__func_code),
         .branch_type(w__branch_type),
+        .is_bj(c__is_bj)
     );
 
     sign_extender Imm_extend(
@@ -240,6 +227,17 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .next_pc(w__branch_address),
         .bcond(w__bcond)
     );
+
+    branch_predictor Branch_Predictor(
+        .clk(clk),
+        .reset_n(reset_n),
+        .is_flush(c__hdu_is_stall),
+        .is_BJ_type(c__is_bj),
+        .caculated_pc(w__branch_address)),
+        .current_PC(r__if_id__pc),
+        .next_PC(r__next_pc)
+    );
+
 
     // TODO: flush mux
 
@@ -353,7 +351,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
         // Update PC
         if(!c__hdu_is_stall) begin
-            r__pc <= c__next_pc;
+            r__pc <= r__next_pc;
         end
     end
 
