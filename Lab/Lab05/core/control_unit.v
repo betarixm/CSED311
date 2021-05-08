@@ -6,7 +6,7 @@
 `define TWO_W     2'b10
 
 
-module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code, branch_type);
+module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code, branch_type);
 
     input [3:0] opcode;
     input [6-1:0] funct;
@@ -14,7 +14,7 @@ module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write
     input reset_n;
     
 
-    output reg reg_write, mem_read, mem_to_reg, mem_write;
+    output reg alu_src, reg_write, mem_read, mem_to_reg, mem_write;
     //additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD.
     output reg pc_to_reg, halt, wwd;
     output reg [1:0] reg_write_dest;
@@ -140,8 +140,8 @@ module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write
     end
 
 
-
-    assign reg_write = !is_store && is_branch;
+    assign alu_src = is_itype | is_load | is_store | is_jrel | is_lhi;
+    assign reg_write = !is_store & is_branch;
     assign mem_read = is_load;
     assign mem_to_reg = is_load;
     assign mem_write = is_store;

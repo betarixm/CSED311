@@ -35,6 +35,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     //# Wires
     //## Control
+    wire c__alu_src;
     wire c__mem_read;
     wire c__mem_write;
     wire c__mem_to_reg;
@@ -67,6 +68,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__mux__write_data;
     wire [`WORD_SIZE-1:0] w__alu_a;
     wire [`WORD_SIZE-1:0] w__alu_b;
+    wire [`WORD_SIZE-1:0] w__mux_alu_src_b;
     wire [`WORD_SIZE-1:0] w__func_code;
     wire [2-1:0] w__branch_type;
     wire w__bcond;
@@ -108,6 +110,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     reg [`WORD_SIZE-1:0] r__id_ex__rt, r__ex_mem__rt, r__mem_wb__rt;
     reg rc__id_ex__halt, rc__ex_mem__halt, rc__mem_wb__halt;
     reg rc__id_ex__wwd, rc__ex_mem__wwd, rc__mem_wb__wwd;
+    reg rc__id_ex__alu_src;
     reg rc__id_ex__mem_read, rc__ex_mem__mem_read;
     reg rc__id_ex__mem_write, rc__ex_mem__mem_write;
     reg rc__id_ex__reg_write, rc__ex_mem__reg_write, rc__mem_wb__reg_write;
@@ -199,6 +202,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .funct(r__if_id__inst[`FUNC]),
         .clk(clk),
         .reset_n(reset_n),
+        .alu_src(c__alu_src),
         .mem_read(c__mem_read),
         .mem_to_reg(c__mem_to_reg),
         .mem_write(c__mem_write),
@@ -241,14 +245,14 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     // TODO : edit mux input for forwarding
 
     mux2_1 mux__alu_a(
-        .sel(c__alu_src_a[0]),
+        .sel(),
         .i1(),
         .i2(r__read_data_1),
         .o(w__alu_a)
     );
 
     mux4_1 mux__alu_b(
-        .sel(c__alu_src_b),
+        .sel(),
         .i1(r__read_data_2),
         .i2(),
         .i3(),
@@ -256,9 +260,16 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .o(w__alu_b)
     );
 
+    mux MuxALU(
+        .sel(rc__id_ex__alu_src),
+        .i1(w__read_data_2),
+        .i2(w__imm_ext),
+        .o(w__mux_alu_src_b)
+    );
+
     alu ALU(
         .A(w__alu_a), 
-        .B(w__alu_b), 
+        .B(w__mux_alu_src_b), 
         .func_code(r__id_ex__func_code),
         .C(w__alu_out), 
         .overflow_flag(w__overflow_flag), 
@@ -317,8 +328,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__rt <= r__if_id__inst[`RT];
         r__id_ex__pc <= r__if_id__pc;
         r__id_ex__next_pc <= r__if_id__next_pc;
-        rc__id_ex__alu_src_A <= c__alu_src_A;
-        rc__id_ex__alu_src_B <= c__alu_src_B;
+        rc__id_ex__alu_src <= c__alu_src;
         rc__id_ex__mem_read <= c__mem_read;
         rc__id_ex__mem_write <= c__mem_write;
         rc__id_ex__mem_to_reg <= c__mem_to_reg; 
