@@ -8,23 +8,22 @@
 
 module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code, branch_type);
 
-	input [3:0] opcode;
+    input [3:0] opcode;
     input [6-1:0] funct;
-	input clk;
-	input reset_n;
-	
+    input clk;
+    input reset_n;
+    
 
-	output reg reg_write, mem_read, mem_to_reg, mem_write;
-  	//additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD.
-  	output reg pc_to_reg, halt, wwd;
-  	output reg [1:0] reg_write_dest;
+    output reg reg_write, mem_read, mem_to_reg, mem_write;
+    //additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD.
+    output reg pc_to_reg, halt, wwd;
+    output reg [1:0] reg_write_dest;
     output reg [4-1:0] func_code;
     output reg [2-1:0] branch_type;
 
-	reg is_rtype, is_itype, is_load, is_store, is_jrel, is_jreg, is_jwrite, is_jump, is_branch, is_lhi, is_wwd, is_halt;
+    reg is_rtype, is_itype, is_load, is_store, is_jrel, is_jreg, is_jwrite, is_jump, is_branch, is_lhi, is_wwd, is_halt;
 
-	
-	always @(*) begin
+    always @(*) begin
         //////////////////////////
         // Classify Instruction //
         //////////////////////////

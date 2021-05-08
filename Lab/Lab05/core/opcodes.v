@@ -1,4 +1,3 @@
-		  
 // Opcode
 `define	ALU_OP	4'd15
 `define	ADI_OP	4'd4
