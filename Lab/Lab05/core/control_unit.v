@@ -1,9 +1,15 @@
 `include "opcodes.v" 
 
-module control_unit (opcode, func_code, clk, reset_n,mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, alu_src_A, alu_src_B, alu_op);
+// for reg_write_dest
+`define RD_W      2'b00
+`define RT_W      2'b01
+`define TWO_W     2'b10
+
+
+module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code);
 
 	input [3:0] opcode;
-	input [5:0] func_code;
+    input [6-1:0] funct;
 	input clk;
 	input reset_n;
 	
@@ -11,8 +17,8 @@ module control_unit (opcode, func_code, clk, reset_n,mem_read, mem_to_reg, mem_w
 	output reg reg_write, mem_read, mem_to_reg, mem_write;
   	//additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD.
   	output reg pc_to_reg, halt, wwd;
-  	output reg [1:0] reg_write_dest, alu_src_A, alu_src_B;
-  	output reg [1:0] alu_op;
+  	output reg [1:0] reg_write_dest;
+    output reg [4-1:0] func_code;
 
 	reg is_rtype, is_itype, is_load, is_store, is_jrel, is_jreg, is_jwrite, is_jump, is_branch, is_lhi, is_wwd, is_halt;
 
@@ -33,7 +39,6 @@ module control_unit (opcode, func_code, clk, reset_n,mem_read, mem_to_reg, mem_w
         is_lhi = `FALSE;
         is_wwd = `FALSE;
         is_halt = `FALSE;
-        pvs_write_en = `FALSE;
         case (opcode)
             `ADI_OP,
             `ORI_OP: begin
@@ -71,7 +76,7 @@ module control_unit (opcode, func_code, clk, reset_n,mem_read, mem_to_reg, mem_w
             `JRL_OP,
             `WWD_OP,
             `HLT_OP: begin
-                case (func_code)
+                case (funct)
                     `INST_FUNC_ADD,
                     `INST_FUNC_SUB,
                     `INST_FUNC_AND,
@@ -96,5 +101,51 @@ module control_unit (opcode, func_code, clk, reset_n,mem_read, mem_to_reg, mem_w
             end
         endcase
     end
+
+
+    always @(*) begin
+        case (opcode)
+        `ADI_OP: func_code = `FUNC_ADD;
+        `ORI_OP: func_code = `FUNC_ORR;
+        `LHI_OP: func_code = `FUNC_LHI;
+        `JMP_OP: func_code = `FUNC_TGT;
+        `JAL_OP: func_code = `FUNC_TGT;
+        `LWD_OP: func_code = `FUNC_ADD;
+        `SWD_OP: func_code = `FUNC_ADD;
+        `BNE_OP: func_code = `FUNC_OFT;
+        `BEQ_OP: func_code = `FUNC_OFT;
+        `BGZ_OP: func_code = `FUNC_OFT;
+        `BLZ_OP: func_code = `FUNC_OFT;
+        `ALU_OP,
+        `JPR_OP, 
+        `JRL_OP, 
+        `HLT_OP, 
+        `WWD_OP: begin 
+            case (funct)
+                `INST_FUNC_ADD: func_code = `FUNC_ADD;
+                `INST_FUNC_SUB: func_code = `FUNC_SUB;
+                `INST_FUNC_AND: func_code = `FUNC_AND;
+                `INST_FUNC_ORR: func_code = `FUNC_ORR;
+                `INST_FUNC_NOT: func_code = `FUNC_NOT;
+                `INST_FUNC_TCP: func_code = `FUNC_TCP;
+                `INST_FUNC_SHL: func_code = `FUNC_SHL;
+                `INST_FUNC_SHR: func_code = `FUNC_SHR;
+                `INST_FUNC_JPR: func_code = `FUNC_IDN;
+                `INST_FUNC_JRL: func_code = `FUNC_IDN;
+                `INST_FUNC_WWD: func_code = `FUNC_IDN;
+                `INST_FUNC_HLT: func_code = `FUNC_ZRO;
+            endcase
+        end
+        endcase
+    end
+
+
+    
+    assign reg_write = !is_store && is_branch;
+    assign mem_read = is_load;
+    assign mem_to_reg = is_load;
+    assign mem_write = is_store;
+    assign pc_to_reg = is_jreg;
+    assign reg_write_dest = (is_lhi | is_itype) ? `RT_W : (is_jwrite) ? `TWO_W : `RD_W;
 
 endmodule
