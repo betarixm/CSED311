@@ -9,6 +9,8 @@
 `include "alu_control_unit.v"
 `include "memory.v"
 `include "datapath.v"
+`include "branch_calculator.v"
+`include "branch_cond_checker.v"
 
 
 module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, num_inst, output_port, is_halted);
@@ -66,9 +68,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 	wire [`WORD_SIZE-1:0] w__alu_a;
 	wire [`WORD_SIZE-1:0] w__alu_b;
 	wire [`WORD_SIZE-1:0] w__func_code;
+	wire [2-1:0] w__branch_type;
+	wire w__bcond;
+	wire w__branch_address;
 
 	//## EX/MEM
-	wire w__bcond;
 	wire w__overflow_flag;
 	wire [`WORD_SIZE-1:0] w__mux__pc;
 	wire [`WORD_SIZE-1:0] w__alu_out;
@@ -205,6 +209,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 		.reg_write(c__reg_write),
 		.reg_write_dest(c__reg_write_dest),
 		.func_code(w__func_code),
+		.branch_type(w__branch_type),
 	);
 
 	sign_extender Imm_extend(
@@ -214,9 +219,19 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
 	// TODO: hazard detection unit
 
-	// TODO: bcond calculation unit
+
+	branch_cond_checker Branch_Cond_Checker(
+		.A(w__read_data_1),
+		.B(w__read_data_2),
+		.branch_type(w__branch_type),
+		.bcond(w__bcond),
+	);
 	
-	// TODO: branch address calculation unit
+	branch_calculator Branch_Calculator(
+		.A(w__read_data_1),
+		.B(w__read_data_2),
+		.C(w__branch_address),
+	);
 
 	// TODO: flush mux
 

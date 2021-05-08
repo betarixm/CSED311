@@ -6,7 +6,7 @@
 `define TWO_W     2'b10
 
 
-module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code);
+module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code, branch_type);
 
 	input [3:0] opcode;
     input [6-1:0] funct;
@@ -19,6 +19,7 @@ module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write
   	output reg pc_to_reg, halt, wwd;
   	output reg [1:0] reg_write_dest;
     output reg [4-1:0] func_code;
+    output reg [2-1:0] branch_type;
 
 	reg is_rtype, is_itype, is_load, is_store, is_jrel, is_jreg, is_jwrite, is_jump, is_branch, is_lhi, is_wwd, is_halt;
 
@@ -112,10 +113,10 @@ module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write
         `JAL_OP: func_code = `FUNC_TGT;
         `LWD_OP: func_code = `FUNC_ADD;
         `SWD_OP: func_code = `FUNC_ADD;
-        `BNE_OP: func_code = `FUNC_OFT;
-        `BEQ_OP: func_code = `FUNC_OFT;
-        `BGZ_OP: func_code = `FUNC_OFT;
-        `BLZ_OP: func_code = `FUNC_OFT;
+        `BNE_OP: branchType = `BRANCH_NE;
+        `BEQ_OP: branchType = `BRANCH_EQ;
+        `BGZ_OP: branchType = `BRANCH_GZ;
+        `BLZ_OP: branchType = `BRANCH_LZ;
         `ALU_OP,
         `JPR_OP, 
         `JRL_OP, 
@@ -140,7 +141,7 @@ module control_unit (opcode, funct, clk, reset_n,mem_read, mem_to_reg, mem_write
     end
 
 
-    
+
     assign reg_write = !is_store && is_branch;
     assign mem_read = is_load;
     assign mem_to_reg = is_load;

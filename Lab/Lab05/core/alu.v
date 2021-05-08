@@ -25,7 +25,6 @@ module alu (A, B, func_code, branch_type, alu_out, overflow_flag, bcond);
             `FUNC_IDN:  C = A;
             `FUNC_LHI:  C = {B[`ADDR_SIZE-1:0],`ADDR_SIZE'b0};
             `FUNC_TGT:  C = {A[`WORD_SIZE-1:`ADDR_SIZE],4'b0,B[`IMMD_SIZE-1:0]};
-            `FUNC_OFT:  C = A + B[`IMMD_SIZE-1:0] + 1;
         endcase
     end
 
@@ -34,14 +33,5 @@ module alu (A, B, func_code, branch_type, alu_out, overflow_flag, bcond);
         else if (func_code == `FUNC_SUB) overflow_flag = (A[`NumBits - 1] ^ B[`NumBits - 1]) & (A[`NumBits - 1] ^ C[`NumBits - 1]);
         else overflow_flag = 1'b0;
     end
-
-    always @(*) begin
-        case (branch_type)
-            `BRANCH_NE: bcond = (C != 0);
-            `BRANCH_EQ: bcond = (C == 0);
-            `BRANCH_GZ: bcond = ($signed(A) >  0);
-            `BRANCH_LZ: bcond = ($signed(A) <  0);
-        endcase
-    end	
 
 endmodule
