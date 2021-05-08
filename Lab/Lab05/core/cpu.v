@@ -222,19 +222,14 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     );
 
     // TODO: hazard detection unit
-
-
-    branch_cond_checker Branch_Cond_Checker(
-        .A(w__read_data_1),
-        .B(w__read_data_2),
-        .branch_type(w__branch_type),
-        .bcond(w__bcond),
-    );
-    
     branch_calculator Branch_Calculator(
         .A(w__read_data_1),
         .B(w__read_data_2),
-        .C(w__branch_address),
+        .PC(r__if_id__pc),
+        .imm(w__imm_ext),
+        .branch_type(w__branch_type),
+        .next_pc(w__branch_address),
+        .bcond(w__bcond)
     );
 
     // TODO: flush mux
