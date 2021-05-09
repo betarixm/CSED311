@@ -10,7 +10,44 @@
 `define TWO_W     2'b10
 
 
-module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code, branch_type, is_bj);
+module small_control_unit (opcode, funct, is_bj);
+    
+    input [3:0] opcode;
+    input [5:0] funct;
+    output reg is_bj;
+
+    always @(*) begin
+        /*
+        case (opcode)
+            `BNE_OP,
+            `BEQ_OP,
+            `BGZ_OP,
+            `BLZ_OP,
+            `JMP_OP,
+            `JAL_OP: is_bj = 1'b1;
+            `JPR_OP,
+            `JRL_OP: begin
+                case (funct)
+                    `INST_FUNC_JPR,
+                    `INST_FUNC_JRL: is_bj = 1'b1;
+                    default: is_bj = 1'b0;
+                endcase
+            end
+            default: is_bj = 1'b0;
+        endcase*/
+        case (opcode)
+            `BNE_OP,
+            `BEQ_OP,
+            `BGZ_OP,
+            `BLZ_OP: is_bj = 1'b1;
+            default: is_bj = 1'b0;
+        endcase
+    end
+
+endmodule
+
+
+module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code, branch_type, jump_type, is_bj);
 
     input [3:0] opcode;
     input [6-1:0] funct;
@@ -23,7 +60,7 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
     output reg pc_to_reg, halt, wwd;
     output reg [1:0] reg_write_dest;
     output reg [3-1:0] func_code;
-    output reg [2-1:0] branch_type;
+    output reg [2-1:0] branch_type, jump_type;
     output reg is_bj;
 
     reg is_rtype, is_itype, is_load, is_store, is_jrel, is_jreg, is_jwrite, is_jump, is_branch, is_lhi, is_wwd, is_halt;
@@ -68,10 +105,12 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
                 is_branch = `TRUE;
             end
             `JMP_OP: begin
+                jump_type = `J_JMP;
                 is_jump = `TRUE;
                 is_jrel = `TRUE;
             end
             `JAL_OP: begin
+                jump_type = `J_JAL;
                 is_jump = `TRUE;
                 is_jrel = `TRUE;
                 is_jwrite = `TRUE;
@@ -92,10 +131,12 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
                     `INST_FUNC_SHR: is_rtype = `TRUE;
 
                     `INST_FUNC_JPR: begin
+                        jump_type = `J_JPR;
                         is_jump = `TRUE;
                         is_jreg = `TRUE;
                     end
                     `INST_FUNC_JRL: begin
+                        jump_type = `J_JRL;
                         is_jump = `TRUE;
                         is_jreg = `TRUE;
                         is_jwrite = `TRUE;
@@ -152,6 +193,7 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
     assign mem_write = is_store;
     assign pc_to_reg = is_jreg;
     assign reg_write_dest = (is_lhi | is_itype) ? `RT_W : ((is_jwrite) ? `TWO_W : `RD_W);
-    assign is_bj = is_branch | is_jump;
+    // assign is_bj = is_branch | is_jump;
+    assign is_bj = is_branch;
 
 endmodule

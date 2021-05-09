@@ -8,6 +8,7 @@
 `include "control_unit.v"
 `include "memory.v"
 `include "branch_calculator.v"
+`include "jump_calculator.v"
 `include "branch_predictor.v"
 `include "hazard.v"
 `include "forwarding_unit.v"
@@ -35,6 +36,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     //# Wires
     //## Control
+    wire c__if__is_bj;
+
     wire c__alu_src;
     wire c__mem_read;
     wire c__mem_write;
@@ -81,8 +84,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__mux_alu_src_b;
     wire [3-1:0] w__func_code;
     wire [2-1:0] w__branch_type;
+    wire [2-1:0] w__jump_type;
     wire w__bcond;
     wire [`WORD_SIZE-1:0] w__branch_address;
+    wire [`WORD_SIZE-1:0] w__jump_address;
 
     //## EX/MEM
     wire w__overflow_flag;
@@ -150,7 +155,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__read_data_1 = 0;
         r__read_data_2 = 0;
         r__num_inst = 0;
-        r__if_id__inst = 0;
+        r__if_id__inst = `NOP;
         r__if_id__pc = 0;
         r__id_ex__pc = 0;
         r__if_id__pred_pc = 0;
@@ -190,7 +195,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             r__read_data_1 = 0;
             r__read_data_2 = 0;
             r__num_inst = 0;
-            r__if_id__inst = 0;
+            r__if_id__inst = `NOP;
             r__if_id__pc = 0;
             r__id_ex__pc = 0;
             r__if_id__pred_pc = 0;
@@ -230,11 +235,17 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     /// Instruction memory is concatenated to Data memory
     /// See bottom, MEM stage.
 
+    small_control_unit Small_Control(
+        .opcode(r__if_id__inst[`OPCODE]),
+        .funct(r__if_id__inst[`FUNC]),
+        .is_bj(c__if__is_bj)
+    );
+
     branch_predictor Branch_Predictor(
         .clk(clk),
         .reset_n(reset_n),
         .is_flush(c__hdu_is_stall),
-        .is_BJ_type(c__is_bj),
+        .is_BJ_type(c__if__is_bj),
         .calculated_pc(w__branch_address),
         .current_PC(r__pc),
         .next_PC(w__pred_pc)
@@ -287,6 +298,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .reg_write_dest(c__reg_write_dest),
         .func_code(w__func_code),
         .branch_type(w__branch_type),
+        .jump_type(w__jump_type),
         .is_bj(c__is_bj)
     );
 
@@ -310,6 +322,14 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .branch_type(w__branch_type),
         .next_pc(w__branch_address),
         .bcond(w__bcond)
+    );
+
+    jump_calculator Jump_Calculator(
+        .A(w__read_data_1),
+        .PC(r__if_id__pc),
+        .imm(r__if_id__inst[`IMMD_SIZE-1:0]),
+        .jump_type(w__jump_type),
+        .next_pc(w__jump_address)
     );
 
 
@@ -355,7 +375,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     mux2_1 mux__alu_b(
         .sel(rc__id_ex__alu_src),
         .i1(w__alu_src_b_reg),
-        .i2(w__imm_ext),
+        .i2(r__id_ex__imm_ext),
         .o(w__mux_alu_src_b)
     );
 
