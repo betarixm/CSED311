@@ -322,18 +322,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .A(w__alu_src_a_reg),
         .B(w__alu_src_b_reg),
         .PC(r__if_id__pc),
-        .imm(r__if_id__inst[`IMMD_SIZE-1:0]),
+        .imm(r__if_id__imm_ext),
         .branch_type(w__branch_type),
+        .jump_type(w__jump_type),
         .next_pc(w__branch_address),
         .bcond(w__bcond)
-    );
-
-    jump_calculator Jump_Calculator(
-        .A(w__read_data_1),
-        .PC(r__if_id__pc),
-        .imm(r__if_id__inst[`IMMD_SIZE-1:0]),
-        .jump_type(w__jump_type),
-        .next_pc(w__jump_address)
     );
 
 
