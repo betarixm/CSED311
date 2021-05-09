@@ -51,6 +51,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire c__hdu_is_stall;
     wire c__bp_select;
     wire c__is_bj;
+    wire c__is_branch;
+    wire c__is_jump;
 
     // alu
     wire [2-1:0] c__forward_a;
@@ -252,6 +254,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .opcode(w__inst[`OPCODE]),
         .calculated_pc(w__branch_address),
         .current_pc(r__pc),
+        .is_branch(c__is_branch),
+        .is_jump(c__is_jump),
         .next_pc(w__pred_pc)
     );
 
@@ -308,7 +312,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .func_code(w__func_code),
         .branch_type(w__branch_type),
         .jump_type(w__jump_type),
-        .is_bj(c__is_bj)
+        .is_bj(c__is_bj),
+        .is_branch(c__is_branch),
+        .is_jump(c__is_jump)
     );
 
     hazard_detect Hazard_Detect(
@@ -323,6 +329,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .B(w__alu_src_b_reg),
         .PC(r__if_id__pc),
         .imm(w__imm_ext),
+        .is_branch(c__is_branch),
+        .is_jump(c__is_jump),
         .branch_type(w__branch_type),
         .jump_type(w__jump_type),
         .next_pc(w__branch_address),

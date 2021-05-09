@@ -47,7 +47,7 @@ module small_control_unit (opcode, funct, is_bj);
 endmodule
 
 
-module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code, branch_type, jump_type, is_bj);
+module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg, mem_write, pc_to_reg, halt, wwd, reg_write, reg_write_dest, func_code, branch_type, jump_type, is_bj, is_jump, is_branch);
 
     input [3:0] opcode;
     input [6-1:0] funct;
@@ -61,9 +61,9 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
     output reg [1:0] reg_write_dest;
     output reg [3-1:0] func_code;
     output reg [2-1:0] branch_type, jump_type;
-    output reg is_bj;
+    output reg is_bj, is_branch, is_jump;
 
-    reg is_rtype, is_itype, is_load, is_store, is_jrel, is_jreg, is_jwrite, is_jump, is_branch, is_lhi, is_wwd, is_halt;
+    reg is_rtype, is_itype, is_load, is_store, is_jrel, is_jreg, is_jwrite, is_lhi, is_wwd, is_halt;
 
     always @(*) begin
         //////////////////////////
@@ -193,7 +193,6 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
     assign mem_write = is_store;
     assign pc_to_reg = is_jreg;
     assign reg_write_dest = (is_lhi | is_itype) ? `RT_W : ((is_jwrite) ? `TWO_W : `RD_W);
-    // assign is_bj = is_branch | is_jump;
-    assign is_bj = is_branch;
+    assign is_bj = is_branch | is_jump;
 
 endmodule
