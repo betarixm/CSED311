@@ -457,8 +457,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
         // Flush IF/ID when BP failed
         if(r__if_id__pred_pc != w__branch_address) begin
-            rc__id_ex__mem_write <= 0;
-            rc__id_ex__reg_write <= 0;
+            r__if_id__inst <= `NOP;
         end
     end
 
