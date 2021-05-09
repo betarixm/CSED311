@@ -68,7 +68,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__inst;
 
     //## ID/EX
-    wire [`WORD_SIZE-1:0] w__next_pc;
+    wire [`WORD_SIZE-1:0] w__pred_pc;
     wire [`WORD_SIZE-1:0] w__imm_ext;
     wire [`WORD_SIZE-1:0] w__read_data_1;
     wire [`WORD_SIZE-1:0] w__read_data_2;
@@ -105,7 +105,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     // from IF/ID
     reg [`WORD_SIZE-1:0] r__if_id__inst;
     reg [`WORD_SIZE-1:0] r__if_id__pc, r__id_ex__pc;
-    reg [`WORD_SIZE-1:0] r__if_id__next_pc, r__id_ex__next_pc, r__ex_mem__next_pc, r__mem_wb__next_pc;
+    reg [`WORD_SIZE-1:0] r__if_id__pred_pc, r__id_ex__next_pc, r__ex_mem__next_pc, r__mem_wb__next_pc;
     
     // from ID/EX
     reg [`WORD_SIZE-1:0] r__id_ex__read_data_1, r__ex_mem__read_data_1, r__mem_wb__read_data_1; // for wwd
@@ -160,6 +160,16 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     /// Memory ///
     /// Instruction memory is concatenated to Data memory
     /// See bottom, MEM stage.
+
+    branch_predictor Branch_Predictor(
+        .clk(clk),
+        .reset_n(reset_n),
+        .is_flush(c__hdu_is_stall),
+        .is_BJ_type(c__is_bj),
+        .caculated_pc(w__branch_address),
+        .current_PC(r__pc),
+        .next_PC(w__pred_pc)
+    );
 
 
     ////////// ID ///////////
@@ -231,16 +241,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .branch_type(w__branch_type),
         .next_pc(w__branch_address),
         .bcond(w__bcond)
-    );
-
-    branch_predictor Branch_Predictor(
-        .clk(clk),
-        .reset_n(reset_n),
-        .is_flush(c__hdu_is_stall),
-        .is_BJ_type(c__is_bj),
-        .caculated_pc(w__branch_address),
-        .current_PC(r__if_id__pc),
-        .next_PC(w__next_pc)
     );
 
 
@@ -360,7 +360,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__rt <= r__if_id__inst[`RT];
         r__id_ex__rs <= r__if_id__inst[`RS];
         r__id_ex__pc <= r__if_id__pc;
-        r__id_ex__next_pc <= r__if_id__next_pc;
+        r__id_ex__next_pc <= r__if_id__pred_pc;
         rc__id_ex__alu_src <= c__alu_src;
         rc__id_ex__mem_read <= c__mem_read;
         if (c__hdu_is_stall)
@@ -378,12 +378,18 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         if (!c__hdu_is_stall) begin
             r__if_id__inst <= w__inst;
             r__if_id__pc <= r__pc;
-            r__if_id__next_pc <= w__next_pc;
+            r__if_id__pred_pc <= w__pred_pc;
         end
 
         // Update PC
         if(!c__hdu_is_stall) begin
-            r__pc <= w__next_pc;
+            r__pc <= (r__if_id__pred_pc == w__branch_address) ? w__pred_pc : w__branch_address;
+        end
+
+        // Flush IF/ID when BP failed
+        if(r__if_id__pred_pc != w__branch_address) begin 
+            rc__id_ex__mem_write <= 0;
+            rc__id_ex__reg_write <= 0;
         end
     end
 
