@@ -149,9 +149,12 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     assign num_inst = r__num_inst;
 
+    reg first;
+
     initial begin
         r__is_flush = 0;
-        r__pc = 0;
+        first = 1;
+        //r__pc = 0;
         r__memory_register = 0;
         r__read_data_1 = 0;
         r__read_data_2 = 0;
@@ -192,7 +195,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     always @(*) begin
         if (reset_n) begin
             r__is_flush = 0;
-            r__pc = 0;
+            first = 1;
+            //r__pc = 0;
             r__memory_register = 0;
             r__read_data_1 = 0;
             r__read_data_2 = 0;
@@ -476,6 +480,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         // Flush IF/ID when BP failed
         if(r__if_id__pred_pc != w__branch_address) begin
             r__if_id__inst <= `NOP;
+        end
+
+        if (first) begin
+            first <= 0;
+            r__pc <= 0;
         end
     end
 
