@@ -53,3 +53,10 @@
 `define   BRANCH_GZ   2'd2
 `define   BRANCH_LZ   2'd3
 
+
+// jump types
+`define   J_JMP       2'd0
+`define   J_JAL       2'd1
+`define   J_JPR       2'd2
+`define   J_JRL       2'd3
+

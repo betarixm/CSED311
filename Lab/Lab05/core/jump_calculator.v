@@ -3,7 +3,7 @@
 
 module jump_calculator (A, PC, imm, jump_type, next_pc);
 
-    input [`WORD_SIZE-1:0] A, B, PC;
+    input [`WORD_SIZE-1:0] A, PC;
     input [`IMMD_SIZE-1:0] imm;
     input [1:0] jump_type;
     output reg [`WORD_SIZE-1:0] next_pc;
