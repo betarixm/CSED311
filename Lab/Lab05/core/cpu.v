@@ -6,11 +6,11 @@
 `include "alu.v"
 `include "register_file.v"
 `include "control_unit.v"
-`include "alu_control_unit.v"
 `include "memory.v"
-`include "datapath.v"
 `include "branch_calculator.v"
-`include "branch_cond_checker.v"
+`include "branch_predictor.v"
+`include "hazard.v"
+`include "forwarding_unit.v"
 
 
 module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, num_inst, output_port, is_halted);
@@ -49,6 +49,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire c__bp_select;
     wire c__is_bj;
 
+    // alu
+    wire [2-1:0] c__forward_a;
+    wire [2-1:0] c__forward_b;
+
     //## WB/MEM
     wire [`WORD_SIZE-1:0] w__addr__pc;
     wire [`WORD_SIZE-1:0] w__pc__mux;
@@ -61,9 +65,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__memory__r_memory_register;
 
     //## IF/ID
-    wire [`WORD_SIZE-1:0] w__inst_ext;
+    wire [`WORD_SIZE-1:0] w__inst;
 
     //## ID/EX
+    wire [`WORD_SIZE-1:0] w__next_pc;
     wire [`WORD_SIZE-1:0] w__imm_ext;
     wire [`WORD_SIZE-1:0] w__read_data_1;
     wire [`WORD_SIZE-1:0] w__read_data_2;
@@ -71,8 +76,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__mux__write_data;
     wire [`WORD_SIZE-1:0] w__alu_a;
     wire [`WORD_SIZE-1:0] w__alu_b;
+    wire [`WORD_SIZE-1:0] w__alu_src_a_reg;
+    wire [`WORD_SIZE-1:0] w__alu_src_b_reg;
     wire [`WORD_SIZE-1:0] w__mux_alu_src_b;
-    wire [`WORD_SIZE-1:0] w__func_code;
+    wire [3-1:0] w__func_code;
     wire [2-1:0] w__branch_type;
     wire w__bcond;
     wire w__branch_address;
@@ -87,11 +94,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     //# Registers
     reg [`WORD_SIZE-1:0] r__pc;
-    reg [`WORD_SIZE-1:0] r__next_pc;
     reg [`WORD_SIZE-1:0] r__memory_register;
     reg [`WORD_SIZE-1:0] r__read_data_1;
     reg [`WORD_SIZE-1:0] r__read_data_2;
-    reg [`WORD_SIZE-1:0] r__inst;
     reg [`WORD_SIZE-1:0] r__num_inst;
 
     /////////////////////////////////
@@ -100,7 +105,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     // from IF/ID
     reg [`WORD_SIZE-1:0] r__if_id__inst;
     reg [`WORD_SIZE-1:0] r__if_id__pc, r__id_ex__pc;
-    reg [`WORD_SIZE-1:0] r__if_id__next_pc, r__id_ex__next_pc;
+    reg [`WORD_SIZE-1:0] r__if_id__next_pc, r__id_ex__next_pc, r__ex_mem__next_pc, r__mem_wb__next_pc;
     
     // from ID/EX
     reg [`WORD_SIZE-1:0] r__id_ex__read_data_1, r__ex_mem__read_data_1, r__mem_wb__read_data_1; // for wwd
@@ -109,9 +114,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     reg [`WORD_SIZE-1:0] r__id_ex__imm_ext;
     reg [`WORD_SIZE-1:0] r__id_ex__opcode;
     reg [`WORD_SIZE-1:0] r__id_ex__funct;
-    reg [`WORD_SIZE-1:0] r__id_ex__func_code;
-    reg [`WORD_SIZE-1:0] r__id_ex__rd, r__ex_mem__rd, r__mem_wb__rd;
-    reg [`WORD_SIZE-1:0] r__id_ex__rt, r__ex_mem__rt, r__mem_wb__rt;
+    reg [3-1:0] r__id_ex__func_code;
+    reg [`REG_SIZE-1:0] r__id_ex__rd, r__ex_mem__rd, r__mem_wb__rd;
+    reg [`REG_SIZE-1:0] r__id_ex__rt, r__ex_mem__rt, r__mem_wb__rt;
+    reg [`REG_SIZE-1:0] r__id_ex__rs;
     reg rc__id_ex__halt, rc__ex_mem__halt, rc__mem_wb__halt;
     reg rc__id_ex__wwd, rc__ex_mem__wwd, rc__mem_wb__wwd;
     reg rc__id_ex__alu_src;
@@ -123,7 +129,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     reg [1:0] rc__id_ex__reg_write_dest, rc__ex_mem__reg_write_dest, rc__mem_wb__reg_write_dest;
 
     // from EX/MEM
-    reg [`WORD_SIZE-1:0] r__ex_mem__alu_out;
+    reg [`WORD_SIZE-1:0] r__ex_mem__alu_out, r__mem_wb__alu_out;
     
     // form MEM/WB
     reg [`WORD_SIZE-1:0] r__mem_wb__memory_read_data;
@@ -131,10 +137,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     //    PIPELINE REGISTERS END   //
     /////////////////////////////////
 
-
-
-    // TODO: manage halt -> doing with halt pipeline register
-    // TODO: link output_port -> doing with wwd, read_data_1 pipeline register
     assign is_halted = rc__mem_wb__halt;
     assign output_port = rc__mem_wb__wwd ? r__mem_wb__read_data_1 : `WORD_SIZE'b0;
 
@@ -159,37 +161,33 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     /// Instruction memory is concatenated to Data memory
     /// See bottom, MEM stage.
 
-    adder Adder(
-        .i1(r__pc),
-        .i2(`WORD_SIZE'1),
-        .o(r__next_pc)
-    );
 
     ////////// ID ///////////
 
     mux4_1_reg mux__write_reg(
-        .sel(c__reg_write_dest),
-        .i1(r__if_id__inst[`RD]),
-        .i2(r__if_id__inst[`RT]),
+        .sel(rc__mem_wb__reg_write_dest),
+        .i1(r__mem_wb__rd), 
+        .i2(r__mem_wb__rt), 
         .i3(`REG_SIZE'd2),
         .i4(`REG_SIZE'd0),
         .o(w__write_reg)
     );
 
     mux2_1 mux__reg_data(
-        .sel(c__pc_to_reg),
+        .sel(rc__mem_wb__pc_to_reg),
         .i1(w__write_data),
-        .i2(r__if_id__next_pc),
+        .i2(r__mem_wb__next_pc),
         .o(w__mux__write_data)
     );
 
     register_file Registers(
         .read1(r__if_id__inst[`RS]),
         .read2(r__if_id__inst[`RT]),
-        .write_reg(w__write_reg),
+        .dest(w__write_reg),
         .write_data(w__mux__write_data),
-        .reg_write(c__reg_write),
+        .reg_write(rc__mem_wb__reg_write),
         .clk(clk),
+        .reset_n(reset_n),
         .read_out1(w__read_data_1),
         .read_out2(w__read_data_2)
     );
@@ -204,7 +202,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .mem_to_reg(c__mem_to_reg),
         .mem_write(c__mem_write),
         .pc_to_reg(c__pc_to_reg),
-        .pc_src(c__pc_source),
         .halt(c__halt),
         .wwd(c__wwd),
         .reg_write(c__reg_write),
@@ -241,47 +238,63 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .reset_n(reset_n),
         .is_flush(c__hdu_is_stall),
         .is_BJ_type(c__is_bj),
-        .caculated_pc(w__branch_address)),
+        .caculated_pc(w__branch_address),
         .current_PC(r__if_id__pc),
-        .next_PC(r__next_pc)
+        .next_PC(w__next_pc)
     );
 
 
-    // TODO: flush mux
+    // ID/EX flush mux is implemented in sequential logic
 
 
     ////////////// EX ////////////////
 
-    // TODO : edit mux input for forwarding
-
-    mux2_1 mux__alu_a(
-        .sel(),
-        .i1(),
-        .i2(r__read_data_1),
-        .o(w__alu_a)
+    forwarding_unit Forwarding_Unit(
+        .EXMEM_RegWrite(rc__ex_mem__reg_write),
+        .EXMEM_RegWriteDest(rc__ex_mem__regwrite_dest),
+        .EXMEM_RD(r__ex_mem__rd),
+        .EXMEM_RT(r__ex_mem__rt),
+        .MEMWB_RegWrite(rc__mem_wb__reg_write),
+        .MEMWB_RegWriteDest(rc__mem_wb__reg_write_dest),
+        .MEMWB_RD(r__mem_wb__rd),
+        .MEMWB_RT(r__mem_wb__rt),
+        .IDEX_RS(r__id_ex__rs),
+        .IDEX_RT(r__id_ex__rt),
+        .forward_a(c__forward_a),
+        .forward_b(c__forward_b)
     );
 
-    mux4_1 mux__alu_b(
-        .sel(),
-        .i1(r__read_data_2),
-        .i2(),
-        .i3(),
-        .i4(),
-        .o(w__alu_b)
+
+    mux4_1 mux__alu_forward_a(
+        .sel(c__forward_a),
+        .i1(w__alu_a),           // no forwarding
+        .i2(w__write_data),      // forwarding from WB
+        .i3(r__ex_mem__alu_out), // forwarding from MEM
+        .i4(`WORD_SIZE'b0),
+        .o(w__alu_src_a_reg)
     );
 
-    mux MuxALU(
+    mux4_1 mux__alu_forward_b(
+        .sel(c__forward_b),
+        .i1(w__read_data_2),     // no forwarding
+        .i2(w__write_data),      // forwarding from WB
+        .i3(r__ex_mem__alu_out), // forwarding from MEM
+        .i4(`WORD_SIZE'b0),
+        .o(w__alu_src_b_reg)
+    );
+
+    mux2_1 mux__alu_b(
         .sel(rc__id_ex__alu_src),
-        .i1(w__read_data_2),
+        .i1(w__alu_src_b_reg),
         .i2(w__imm_ext),
         .o(w__mux_alu_src_b)
     );
 
     alu ALU(
-        .A(w__alu_a), 
+        .A(w__alu_src_a_reg), 
         .B(w__mux_alu_src_b), 
         .func_code(r__id_ex__func_code),
-        .C(w__alu_out), 
+        .alu_out(w__alu_out),
         .overflow_flag(w__overflow_flag)
     );
 
@@ -293,7 +306,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .reset_n(reset_n),
         .read_m1(~is_flush),
         .address1(r__pc),
-        .data1(r__inst),
+        .data1(w__inst),
         .read_m2(rc__ex_mem__mem_read),
         .write_m2(rc__ex_mem__mem_write),
         .address2(r__ex_mem__alu_out),
@@ -305,9 +318,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     /////////////// WB ////////////////
     mux2_1 mux__alu_out__reg_memory(
-        .sel(c__mem_to_reg),
-        .i1(r__alu_out),
-        .i2(r__memory_register),
+        .sel(rc__mem_wb__mem_to_reg),
+        .i1(r__mem_wb__alu_out),
+        .i2(r__mem_wb__memory_read_data),
         .o(w__write_data)
     );	
 
@@ -317,18 +330,20 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         // update Pipeline Registers
         // - MEM/WB
         r__mem_wb__memory_read_data <= w__data;
+        r__mem_wb__alu_out <= r__ex_mem__alu_out;
         r__mem_wb__rd <= r__ex_mem__rd;
         r__mem_wb__rt <= r__ex_mem__rt;
         r__mem_wb__read_data_1 <= r__ex_mem__read_data_1;
+        r__mem_wb__next_pc <= r__ex_mem__next_pc;
         rc__mem_wb__reg_write <= rc__ex_mem__reg_write;
         rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
         // - EX/MEM
         r__ex_mem__alu_out <= w__alu_out;
-        
         r__ex_mem__rd <= r__id_ex__rd;
         r__ex_mem__rt <= r__id_ex__rt;
         r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
         r__ex_mem__mux_alu_src_b <= r__id_ex__mux_alu_src_b;
+        r__ex_mem__next_pc <= r__id_ex__next_pc;
         rc__ex_mem__mem_read <= rc__id_ex__mem_read;
         rc__ex_mem__mem_write <= rc__id_ex__mem_write;
         rc__ex_mem__mem_to_reg <= rc__id_ex__mem_to_reg;
@@ -343,23 +358,32 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__func_code <= w__func_code;
         r__id_ex__rd <= r__if_id__inst[`RD];
         r__id_ex__rt <= r__if_id__inst[`RT];
+        r__id_ex__rs <= r__if_id__inst[`RS];
         r__id_ex__pc <= r__if_id__pc;
         r__id_ex__next_pc <= r__if_id__next_pc;
         rc__id_ex__alu_src <= c__alu_src;
         rc__id_ex__mem_read <= c__mem_read;
-        rc__id_ex__mem_write <= c__mem_write;
+        if (c__hdu_is_stall)
+            rc__id_ex__mem_write <= 1'b0;
+        else
+            rc__id_ex__mem_write <= c__mem_write;
         rc__id_ex__mem_to_reg <= c__mem_to_reg; 
         rc__id_ex__pc_to_reg <= c__pc_to_reg;
-        rc__id_ex__reg_write <= c__reg_write;
+        if (c__hdu_is_stall)
+            rc__id_ex__reg_write <= 1'b0;
+        else
+            rc__id_ex__reg_write <= c__reg_write;
         rc__id_ex__reg_write_dest <= c__reg_write_dest;
         // - IF/ID
-        r__if_id__inst <= r__inst;
-        r__if_id__pc <= r__pc;
-        r__if_id__next_pc <= r__next_pc;
+        if (!c__hdu_is_stall) begin
+            r__if_id__inst <= w__inst;
+            r__if_id__pc <= r__pc;
+            r__if_id__next_pc <= w__next_pc;
+        end
 
         // Update PC
         if(!c__hdu_is_stall) begin
-            r__pc <= r__next_pc;
+            r__pc <= w__next_pc;
         end
     end
 

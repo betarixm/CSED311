@@ -1,5 +1,9 @@
 `include "opcodes.v" 
 
+
+`define TRUE   1'b1
+`define FALSE  1'b0
+
 // for reg_write_dest
 `define RD_W      2'b00
 `define RT_W      2'b01
@@ -18,7 +22,7 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
     //additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD.
     output reg pc_to_reg, halt, wwd;
     output reg [1:0] reg_write_dest;
-    output reg [4-1:0] func_code;
+    output reg [3-1:0] func_code;
     output reg [2-1:0] branch_type;
     output reg is_bj;
 
@@ -113,10 +117,10 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
         `JAL_OP: func_code = `FUNC_TGT;
         `LWD_OP: func_code = `FUNC_ADD;
         `SWD_OP: func_code = `FUNC_ADD;
-        `BNE_OP: branchType = `BRANCH_NE;
-        `BEQ_OP: branchType = `BRANCH_EQ;
-        `BGZ_OP: branchType = `BRANCH_GZ;
-        `BLZ_OP: branchType = `BRANCH_LZ;
+        `BNE_OP: branch_type = `BRANCH_NE;
+        `BEQ_OP: branch_type = `BRANCH_EQ;
+        `BGZ_OP: branch_type = `BRANCH_GZ;
+        `BLZ_OP: branch_type = `BRANCH_LZ;
         `ALU_OP,
         `JPR_OP, 
         `JRL_OP, 
@@ -147,7 +151,7 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
     assign mem_to_reg = is_load;
     assign mem_write = is_store;
     assign pc_to_reg = is_jreg;
-    assign reg_write_dest = (is_lhi | is_itype) ? `RT_W : (is_jwrite) ? `TWO_W : `RD_W;
+    assign reg_write_dest = (is_lhi | is_itype) ? `RT_W : ((is_jwrite) ? `TWO_W : `RD_W);
     assign is_bj = is_branch | is_jump;
 
 endmodule
