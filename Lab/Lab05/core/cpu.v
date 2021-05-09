@@ -235,7 +235,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .reset_n(reset_n),
         .is_flush(c__hdu_is_stall),
         .is_BJ_type(c__is_bj),
-        .caculated_pc(w__branch_address),
+        .calculated_pc(w__branch_address),
         .current_PC(r__pc),
         .next_PC(w__pred_pc)
     );
