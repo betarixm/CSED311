@@ -130,7 +130,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     reg rc__id_ex__halt, rc__ex_mem__halt, rc__mem_wb__halt;
     reg rc__id_ex__wwd, rc__ex_mem__wwd, rc__mem_wb__wwd;
     reg rc__id_ex__alu_src;
-    reg rc__id_ex__mem_read, rc__ex_mem__mem_read;
+    reg rc__id_ex__mem_read, rc__ex_mem__mem_read, rc__mem_wb__mem_read;
     reg rc__id_ex__mem_write, rc__ex_mem__mem_write;
     reg rc__id_ex__reg_write, rc__ex_mem__reg_write, rc__mem_wb__reg_write;
     reg rc__id_ex__mem_to_reg, rc__ex_mem__mem_to_reg, rc__mem_wb__mem_to_reg;
@@ -156,7 +156,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .i4(`WORD_SIZE'b0),
         .o(w__wwd_src)
     );
-    assign output_port = rc__mem_wb__wwd ? w__wwd_src : `WORD_SIZE'b0;
+    assign output_port = rc__id_ex__wwd ? w__wwd_src : `WORD_SIZE'b0;
 
     assign num_inst = r__num_inst;
 
@@ -407,7 +407,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .read_m1(~r__is_flush),
         .address1(r__pc),
         .data1(w__inst),
-        .read_m2(rc__ex_mem__mem_read),
+        .read_m2(rc__ex_mem__mem_read | rc__mem_wb__mem_read),
         .write_m2(rc__ex_mem__mem_write),
         .address2(r__ex_mem__alu_out),
         .data2(w__data)
@@ -429,7 +429,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     always @(posedge clk) begin
         // update Pipeline Registers
         // - MEM/WB
-        r__mem_wb__memory_read_data <= w__data;
         r__mem_wb__alu_out <= r__ex_mem__alu_out;
         r__mem_wb__rd <= r__ex_mem__rd;
         r__mem_wb__rt <= r__ex_mem__rt;
@@ -437,6 +436,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__mem_wb__next_pc <= r__ex_mem__next_pc;
         rc__mem_wb__wwd <= rc__ex_mem__wwd;
         rc__mem_wb__halt <= rc__ex_mem__halt;
+        rc__mem_wb__mem_read <= rc__ex_mem__mem_read;
         rc__mem_wb__mem_to_reg <= rc__ex_mem__mem_to_reg;
         rc__mem_wb__pc_to_reg <= rc__ex_mem__pc_to_reg;
         rc__mem_wb__reg_write <= rc__ex_mem__reg_write;
@@ -517,6 +517,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         if (r__if_id__inst !== `NOP && !c__hdu_is_stall) begin
             r__if_id__inst <= w__inst;
         end
+        if (w__data !== `WORD_SIZE'bX && w__data !== `WORD_SIZE'bZ)
+            r__mem_wb__memory_read_data <= w__data;
     end
 
 
