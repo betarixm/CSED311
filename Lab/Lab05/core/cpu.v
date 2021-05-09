@@ -473,7 +473,13 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
         // Update PC
         if(!c__hdu_is_stall) begin
-            r__pc <= (c__is_branch && (r__if_id__pred_pc == w__branch_address)) ? w__pred_pc : w__branch_address;
+            if (c__is_branch) begin
+                r__pc <= (r__if_id__pred_pc == w__branch_address) ? w__pred_pc : w__branch_address;
+            end else if (c__is_jump) begin
+                r__pc <= w__branch_address;
+            end else begin
+                r__pc <= w__pred_pc;
+            end
         end
 
         // Flush IF/ID when BP failed
