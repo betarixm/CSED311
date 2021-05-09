@@ -1,4 +1,4 @@
-`include "opcodes.v"
+`include "env.v"
 
 // for reg_write_dest
 `define RD_W      2'b00
@@ -11,14 +11,14 @@
 `define MEM       2'b10
 
 
-module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, MEMWB_RegWrite, MEMWB_RegWriteDest, MEMWB_RD, MEMWB_RT, IDEX_RS, IDEX_RT, forward_a, forward_b)
+module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, MEMWB_RegWrite, MEMWB_RegWriteDest, MEMWB_RD, MEMWB_RT, IDEX_RS, IDEX_RT, forward_a, forward_b);
     input EXMEM_RegWrite, EXMEM_RegWriteDest;
     input [`REG_SIZE-1:0] EXMEM_RD, EXMEM_RT;
     input MEMWB_RegWrite, MEMWB_RegWriteDest;
-    input [`REG_SIZE-1:0] MEMWB_RD, EXMEM_RT;
+    input [`REG_SIZE-1:0] MEMWB_RD, MEMWB_RT;
     input [`REG_SIZE-1:0] IDEX_RS, IDEX_RT;
 
-    output [2-1] forward_a, forward_b;
+    output reg [2-1:0] forward_a, forward_b;
 
 
     always @(*) begin

@@ -6,9 +6,7 @@
 `include "alu.v"
 `include "register_file.v"
 `include "control_unit.v"
-`include "alu_control_unit.v"
 `include "memory.v"
-`include "datapath.v"
 `include "branch_calculator.v"
 `include "branch_predictor.v"
 `include "hazard.v"
@@ -166,7 +164,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     adder Adder(
         .i1(r__pc),
-        .i2(`WORD_SIZE'1),
+        .i2(`WORD_SIZE'b1),
         .o(r__next_pc)
     );
 
@@ -246,7 +244,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .reset_n(reset_n),
         .is_flush(c__hdu_is_stall),
         .is_BJ_type(c__is_bj),
-        .caculated_pc(w__branch_address)),
+        .caculated_pc(w__branch_address),
         .current_PC(r__if_id__pc),
         .next_PC(r__next_pc)
     );

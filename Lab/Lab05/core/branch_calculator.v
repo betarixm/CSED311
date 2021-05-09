@@ -1,9 +1,10 @@
 `include "opcodes.v"
+`include "env.v"
 
-module branch_calculator (A, B, PC, imm, branch_type, next_pc, bcond)
+module branch_calculator (A, B, PC, imm, branch_type, next_pc, bcond);
 
     input [`WORD_SIZE-1:0] A, B, PC;
-    input [`IMMD_SIZE-1:0] imm
+    input [`IMMD_SIZE-1:0] imm;
     input [1:0] branch_type;
     output [`WORD_SIZE-1:0] next_pc;
     output reg bcond;

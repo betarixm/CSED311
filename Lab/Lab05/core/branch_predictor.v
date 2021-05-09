@@ -1,6 +1,7 @@
 `include "opcodes.v" 
+`include "env.v"
 
-module branch_predictor(clk, reset_n, is_flush, is_BJ_type, caculated_pc, current_PC, next_PC);
+module branch_predictor(clk, reset_n, PC, is_flush, is_BJ_type, caculated_pc, current_PC, next_PC);
 
     input clk;
     input reset_n;
