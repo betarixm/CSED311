@@ -18,8 +18,8 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
 
     integer i;
 
-    assign read_out1 = read1==dest ? write_data : r[read1];
-    assign read_out2 = read2==dest ? write_data : r[read2];
+    assign read_out1 = (read1==dest && write_data!==`WORD_SIZE'bX) ? write_data : r[read1];
+    assign read_out2 = (read2==dest && write_data!==`WORD_SIZE'bX) ? write_data : r[read2];
 
     initial begin
         for(i = 0; i < `NUM_MAX_REGISTER; i = i + 1) begin
