@@ -58,6 +58,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [2-1:0] c__forward_a;
     wire [2-1:0] c__forward_b;
 
+    wire [`WORD_SIZE-1:0] w__wwd_src;
     //## WB/MEM
     wire [`WORD_SIZE-1:0] w__addr__pc;
     wire [`WORD_SIZE-1:0] w__pc__mux;
@@ -146,7 +147,16 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     /////////////////////////////////
 
     assign is_halted = rc__mem_wb__halt;
-    assign output_port = rc__mem_wb__wwd ? r__mem_wb__read_data_1 : `WORD_SIZE'b0;
+
+    mux4_1 mux__wwd_forward(
+        .sel(c__forward_a),
+        .i1(r__mem_wb__read_data_1),     // no forwarding
+        .i2(w__write_data),      // forwarding from WB
+        .i3(r__ex_mem__alu_out), // forwarding from MEM
+        .i4(`WORD_SIZE'b0),
+        .o(w__wwd_src)
+    );
+    assign output_port = rc__mem_wb__wwd ? w__wwd_src : `WORD_SIZE'b0;
 
     assign num_inst = r__num_inst;
 
@@ -425,6 +435,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__mem_wb__rt <= r__ex_mem__rt;
         r__mem_wb__read_data_1 <= r__ex_mem__read_data_1;
         r__mem_wb__next_pc <= r__ex_mem__next_pc;
+        rc__mem_wb__wwd <= rc__ex_mem__wwd;
+        rc__mem_wb__halt <= rc__ex_mem__halt;
+        rc__mem_wb__mem_to_reg <= rc__ex_mem__mem_to_reg;
+        rc__mem_wb__pc_to_reg <= rc__ex_mem__pc_to_reg;
         rc__mem_wb__reg_write <= rc__ex_mem__reg_write;
         rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
         // - EX/MEM
@@ -434,6 +448,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
         r__ex_mem__mux_alu_src_b <= r__id_ex__mux_alu_src_b;
         r__ex_mem__next_pc <= r__id_ex__next_pc;
+        rc__ex_mem__wwd <= rc__id_ex__wwd;
+        rc__ex_mem__halt <= rc__id_ex__halt;
         rc__ex_mem__mem_read <= rc__id_ex__mem_read;
         rc__ex_mem__mem_write <= rc__id_ex__mem_write;
         rc__ex_mem__mem_to_reg <= rc__id_ex__mem_to_reg;
@@ -451,6 +467,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__rs <= r__if_id__inst[`RS];
         r__id_ex__pc <= r__if_id__pc;
         r__id_ex__next_pc <= r__if_id__pred_pc;
+        rc__id_ex__wwd <= c__wwd;
+        rc__id_ex__halt <= c__halt;
         rc__id_ex__alu_src <= c__alu_src;
         rc__id_ex__mem_read <= c__mem_read;
         if (c__hdu_is_stall)

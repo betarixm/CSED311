@@ -187,12 +187,14 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
 
 
     assign alu_src = is_itype | is_load | is_store | is_jrel | is_lhi;
-    assign reg_write = !is_store & is_branch;
+    assign reg_write = !is_store & !is_branch & !(is_jump & !is_jwrite) & !is_wwd & !is_halt;
     assign mem_read = is_load;
     assign mem_to_reg = is_load;
     assign mem_write = is_store;
     assign pc_to_reg = is_jreg;
     assign reg_write_dest = (is_lhi | is_itype) ? `RT_W : ((is_jwrite) ? `TWO_W : `RD_W);
     assign is_bj = is_branch | is_jump;
+    assign wwd = is_wwd;
+    assign halt = is_halt;
 
 endmodule

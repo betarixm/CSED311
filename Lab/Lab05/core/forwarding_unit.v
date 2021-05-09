@@ -26,15 +26,15 @@ module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, 
     always @(*) begin
         if (EXMEM_RegWrite) begin
             if (EXMEM_RegWriteDest == `RD_W) begin
-                if (IDEX_RS == MEMWB_RD) forward_a = `MEM;
+                if (IDEX_RS == EXMEM_RD) forward_a = `MEM;
                 else forward_a = `None;
-                if (IDEX_RT == MEMWB_RD) forward_b = `MEM;
+                if (IDEX_RT == EXMEM_RD) forward_b = `MEM;
                 else forward_b = `None;
             end
             else if (EXMEM_RegWriteDest == `RT_W) begin
-                if (IDEX_RS == MEMWB_RT) forward_a = `MEM;
+                if (IDEX_RS == EXMEM_RT) forward_a = `MEM;
                 else forward_a = `None;
-                if (IDEX_RT == MEMWB_RT) forward_b = `MEM;
+                if (IDEX_RT == EXMEM_RT) forward_b = `MEM;
                 else forward_b = `None;
             end
             else if (EXMEM_RegWriteDest == `TWO_W) begin

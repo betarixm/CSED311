@@ -16,4 +16,4 @@
 `define   IMMD_SIZE    8
 `define   REG_SIZE     2
 
-`define NOP 16'b0100000000000000
+`define NOP 16'hf11c
