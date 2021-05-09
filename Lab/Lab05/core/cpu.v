@@ -470,11 +470,13 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__id_ex__wwd <= c__wwd;
         rc__id_ex__halt <= c__halt;
         rc__id_ex__alu_src <= c__alu_src;
-        rc__id_ex__mem_read <= c__mem_read;
-        if (c__hdu_is_stall)
+        if (c__hdu_is_stall) begin
+            rc__id_ex__mem_read <= 1'b0;
             rc__id_ex__mem_write <= 1'b0;
-        else
+        end else begin
+            rc__id_ex__mem_read <= c__mem_read;
             rc__id_ex__mem_write <= c__mem_write;
+        end
         rc__id_ex__mem_to_reg <= c__mem_to_reg; 
         rc__id_ex__pc_to_reg <= c__pc_to_reg;
         if (c__hdu_is_stall)
@@ -487,6 +489,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             r__if_id__inst <= w__inst;
             r__if_id__pc <= r__pc;
             r__if_id__pred_pc <= w__pred_pc;
+        end
+        else begin
+            r__if_id__inst <= `NOP;
         end
 
         // Update PC
