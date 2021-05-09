@@ -111,7 +111,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     // from IF/ID
     reg [`WORD_SIZE-1:0] r__if_id__inst;
     reg [`WORD_SIZE-1:0] r__if_id__pc, r__id_ex__pc;
-    reg [`WORD_SIZE-1:0] r__if_id__imm_ext;
     reg [`WORD_SIZE-1:0] r__if_id__pred_pc, r__id_ex__next_pc, r__ex_mem__next_pc, r__mem_wb__next_pc;
     
     // from ID/EX
@@ -172,7 +171,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__read_data_2 = 0;
         r__id_ex__mux_alu_src_b = 0;
         r__ex_mem__mux_alu_src_b = 0;
-        r__if_id__imm_ext = 0;
         r__id_ex__imm_ext = 0;
         r__id_ex__opcode = 0;
         r__id_ex__funct = 0;
@@ -214,7 +212,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             r__id_ex__read_data_2 = 0;
             r__id_ex__mux_alu_src_b = 0;
             r__ex_mem__mux_alu_src_b = 0;
-            r__if_id__imm_ext = 0;
             r__id_ex__imm_ext = 0;
             r__id_ex__opcode = 0;
             r__id_ex__funct = 0;
@@ -247,11 +244,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .funct(r__if_id__inst[`FUNC]),
         .is_bj(c__if__is_bj)
     );
-    
-    sign_extender Imm_Extend(
-        .immediate(w__inst[`IMMD_SIZE-1:0]),
-        .sign_extended(w__imm_ext)
-    );
 
     branch_predictor Branch_Predictor(
         .clk(clk),
@@ -260,12 +252,16 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .opcode(w__inst[`OPCODE]),
         .calculated_pc(w__branch_address),
         .current_pc(r__pc),
-        .imm(w__imm_ext),
         .next_pc(w__pred_pc)
     );
 
 
     ////////// ID ///////////
+
+    sign_extender Imm_Extend(
+        .immediate(r__if_id__inst[`IMMD_SIZE-1:0]),
+        .sign_extended(w__imm_ext)
+    );
 
     mux4_1_reg mux__write_reg(
         .sel(rc__mem_wb__reg_write_dest),
@@ -326,7 +322,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .A(w__alu_src_a_reg),
         .B(w__alu_src_b_reg),
         .PC(r__if_id__pc),
-        .imm(r__if_id__imm_ext),
+        .imm(w__imm_ext),
         .branch_type(w__branch_type),
         .jump_type(w__jump_type),
         .next_pc(w__branch_address),
@@ -444,7 +440,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__read_data_1 <= w__read_data_1;
         r__id_ex__read_data_2 <= w__read_data_2;
         r__id_ex__mux_alu_src_b <= w__mux_alu_src_b;
-        r__id_ex__imm_ext <= r__if_id__imm_ext;
+        r__id_ex__imm_ext <= w__imm_ext;
         r__id_ex__func_code <= w__func_code;
         r__id_ex__rd <= r__if_id__inst[`RD];
         r__id_ex__rt <= r__if_id__inst[`RT];
@@ -469,7 +465,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             r__if_id__inst <= w__inst;
             r__if_id__pc <= r__pc;
             r__if_id__pred_pc <= w__pred_pc;
-            r__if_id__imm_ext <= w__imm_ext;
         end
 
         // Update PC
