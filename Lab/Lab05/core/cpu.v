@@ -319,8 +319,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     );
 
     branch_calculator Branch_Calculator(
-        .A(w__read_data_1),
-        .B(w__read_data_2),
+        .A(w__alu_src_a_reg),
+        .B(w__alu_src_b_reg),
         .PC(r__if_id__pc),
         .imm(r__if_id__inst[`IMMD_SIZE-1:0]),
         .branch_type(w__branch_type),
@@ -360,7 +360,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     mux4_1 mux__alu_forward_a(
         .sel(c__forward_a),
-        .i1(w__alu_a),           // no forwarding
+        .i1(w__read_data_1),     // no forwarding
         .i2(w__write_data),      // forwarding from WB
         .i3(r__ex_mem__alu_out), // forwarding from MEM
         .i4(`WORD_SIZE'b0),
