@@ -10,7 +10,9 @@
 `include "memory.v"
 `include "datapath.v"
 `include "branch_calculator.v"
-`include "branch_cond_checker.v"
+`include "branch_predictor.v"
+`include "hazard.v"
+`include "forwarding_unit.v"
 
 
 module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, num_inst, output_port, is_halted);
@@ -49,6 +51,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire c__bp_select;
     wire c__is_bj;
 
+    // alu
+    wire [2-1:0] c__forward_a;
+    wire [2-1:0] c__forward_b;
+
     //## WB/MEM
     wire [`WORD_SIZE-1:0] w__addr__pc;
     wire [`WORD_SIZE-1:0] w__pc__mux;
@@ -71,6 +77,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__mux__write_data;
     wire [`WORD_SIZE-1:0] w__alu_a;
     wire [`WORD_SIZE-1:0] w__alu_b;
+    wire [`WORD_SIZE-1:0] w__alu_src_a_reg;
+    wire [`WORD_SIZE-1:0] w__alu_src_b_reg;
     wire [`WORD_SIZE-1:0] w__mux_alu_src_b;
     wire [`WORD_SIZE-1:0] w__func_code;
     wire [2-1:0] w__branch_type;
@@ -110,8 +118,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     reg [`WORD_SIZE-1:0] r__id_ex__opcode;
     reg [`WORD_SIZE-1:0] r__id_ex__funct;
     reg [`WORD_SIZE-1:0] r__id_ex__func_code;
-    reg [`WORD_SIZE-1:0] r__id_ex__rd, r__ex_mem__rd, r__mem_wb__rd;
-    reg [`WORD_SIZE-1:0] r__id_ex__rt, r__ex_mem__rt, r__mem_wb__rt;
+    reg [`REG_SIZE-1:0] r__id_ex__rd, r__ex_mem__rd, r__mem_wb__rd;
+    reg [`REG_SIZE-1:0] r__id_ex__rt, r__ex_mem__rt, r__mem_wb__rt;
+    reg [`REG_SIZE-1:0] r__id_ex__rs;
     reg rc__id_ex__halt, rc__ex_mem__halt, rc__mem_wb__halt;
     reg rc__id_ex__wwd, rc__ex_mem__wwd, rc__mem_wb__wwd;
     reg rc__id_ex__alu_src;
@@ -248,33 +257,49 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     ////////////// EX ////////////////
 
-    // TODO : edit mux input for forwarding
-
-    mux2_1 mux__alu_a(
-        .sel(),
-        .i1(),
-        .i2(r__read_data_1),
-        .o(w__alu_a)
+    forwarding_unit Forwarding_Unit(
+        .EXMEM_RegWrite(rc__ex_mem__reg_write),
+        .EXMEM_RegWriteDest(rc__ex_mem__regwrite_dest),
+        .EXMEM_RD(r__ex_mem__rd),
+        .EXMEM_RT(r__ex_mem__rt),
+        .MEMWB_RegWrite(rc__mem_wb__reg_write),
+        .MEMWB_RegWriteDest(rc__mem_wb__reg_write_dest),
+        .MEMWB_RD(r__mem_wb__rd),
+        .MEMWB_RT(r__mem_wb__rt),
+        .IDEX_RS(r__id_ex__rs),
+        .IDEX_RT(r__id_ex__rt),
+        .forward_a(c__forward_a),
+        .forward_b(c__forward_b)
     );
 
-    mux4_1 mux__alu_b(
-        .sel(),
-        .i1(r__read_data_2),
-        .i2(),
-        .i3(),
-        .i4(),
-        .o(w__alu_b)
+
+    mux4_1 mux__alu_forward_a(
+        .sel(c__forward_a),
+        .i1(w__alu_a),           // no forwarding
+        .i2(w__write_data),      // forwarding from WB
+        .i3(r__ex_mem__alu_out), // forwarding from MEM
+        .i4(`WORD_SIZE'b0),
+        .o(w__alu_src_a_reg)
     );
 
-    mux MuxALU(
+    mux4_1 mux__alu_forward_b(
+        .sel(c__forward_b),
+        .i1(w__read_data_2),     // no forwarding
+        .i2(w__write_data),      // forwarding from WB
+        .i3(r__ex_mem__alu_out), // forwarding from MEM
+        .i4(`WORD_SIZE'b0),
+        .o(w__alu_src_b_reg)
+    );
+
+    mux2_1 mux__alu_b(
         .sel(rc__id_ex__alu_src),
-        .i1(w__read_data_2),
+        .i1(w__alu_src_b_reg),
         .i2(w__imm_ext),
         .o(w__mux_alu_src_b)
     );
 
     alu ALU(
-        .A(w__alu_a), 
+        .A(w__alu_src_a_reg), 
         .B(w__mux_alu_src_b), 
         .func_code(r__id_ex__func_code),
         .C(w__alu_out), 
@@ -320,7 +345,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
         // - EX/MEM
         r__ex_mem__alu_out <= w__alu_out;
-        
         r__ex_mem__rd <= r__id_ex__rd;
         r__ex_mem__rt <= r__id_ex__rt;
         r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
@@ -339,6 +363,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__func_code <= w__func_code;
         r__id_ex__rd <= r__if_id__inst[`RD];
         r__id_ex__rt <= r__if_id__inst[`RT];
+        r__id_ex__rs <= r__if_id__inst[`RS];
         r__id_ex__pc <= r__if_id__pc;
         r__id_ex__next_pc <= r__if_id__next_pc;
         rc__id_ex__alu_src <= c__alu_src;
