@@ -219,7 +219,13 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .sign_extended(w__imm_ext)
     );
 
-    // TODO: hazard detection unit
+    hazard_detect Hazard_Detect(
+        .IFID_IR(r__if_id__inst),
+        .IDEX_rd(r__id_ex__rd),
+        .IDEX_M_mem_read(rc__id_ex__mem_read),
+        .is_stall(c__hdu_is_stall)
+    );
+
     branch_calculator Branch_Calculator(
         .A(w__read_data_1),
         .B(w__read_data_2),
