@@ -22,7 +22,7 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
     //additional control signals. pc_to_reg: to support JAL, JRL. halt: to support HLT. wwd: to support WWD.
     output reg pc_to_reg, halt, wwd;
     output reg [1:0] reg_write_dest;
-    output reg [4-1:0] func_code;
+    output reg [3-1:0] func_code;
     output reg [2-1:0] branch_type;
     output reg is_bj;
 
