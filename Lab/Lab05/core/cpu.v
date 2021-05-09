@@ -106,6 +106,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     // from IF/ID
     reg [`WORD_SIZE-1:0] r__if_id__inst;
     reg [`WORD_SIZE-1:0] r__if_id__pc, r__id_ex__pc;
+    reg [`WORD_SIZE-1:0] r__if_id__imm_ext;
     reg [`WORD_SIZE-1:0] r__if_id__pred_pc, r__id_ex__next_pc, r__ex_mem__next_pc, r__mem_wb__next_pc;
     
     // from ID/EX
@@ -163,6 +164,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__read_data_2 = 0;
         r__id_ex__mux_alu_src_b = 0;
         r__ex_mem__mux_alu_src_b = 0;
+        r__if_id__imm_ext = 0;
         r__id_ex__imm_ext = 0;
         r__id_ex__opcode = 0;
         r__id_ex__funct = 0;
@@ -203,6 +205,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             r__id_ex__read_data_2 = 0;
             r__id_ex__mux_alu_src_b = 0;
             r__ex_mem__mux_alu_src_b = 0;
+            r__if_id__imm_ext = 0;
             r__id_ex__imm_ext = 0;
             r__id_ex__opcode = 0;
             r__id_ex__funct = 0;
@@ -230,14 +233,20 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     /// Instruction memory is concatenated to Data memory
     /// See bottom, MEM stage.
 
+    sign_extender Imm_Extend(
+        .immediate(w__inst[`IMMD_SIZE-1:0]),
+        .sign_extended(w__imm_ext)
+    );
+
     branch_predictor Branch_Predictor(
         .clk(clk),
         .reset_n(reset_n),
         .is_flush(c__hdu_is_stall),
-        .is_BJ_type(c__is_bj),
+        .opcode(w__inst[`OPCODE]),
         .calculated_pc(w__branch_address),
-        .current_PC(r__pc),
-        .next_PC(w__pred_pc)
+        .current_pc(r__pc),
+        .imm(w__imm_ext),
+        .next_pc(w__pred_pc)
     );
 
 
@@ -288,11 +297,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .func_code(w__func_code),
         .branch_type(w__branch_type),
         .is_bj(c__is_bj)
-    );
-
-    sign_extender Imm_extend(
-        .immediate(r__if_id__inst[`IMMD_SIZE-1:0]),
-        .sign_extended(w__imm_ext)
     );
 
     hazard_detect Hazard_Detect(
@@ -355,7 +359,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     mux2_1 mux__alu_b(
         .sel(rc__id_ex__alu_src),
         .i1(w__alu_src_b_reg),
-        .i2(w__imm_ext),
+        .i2(r__id_ex__imm_ext),
         .o(w__mux_alu_src_b)
     );
 
@@ -423,7 +427,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__read_data_1 <= w__read_data_1;
         r__id_ex__read_data_2 <= w__read_data_2;
         r__id_ex__mux_alu_src_b <= w__mux_alu_src_b;
-        r__id_ex__imm_ext <= w__imm_ext;
+        r__id_ex__imm_ext <= r__if_id__imm_ext;
         r__id_ex__func_code <= w__func_code;
         r__id_ex__rd <= r__if_id__inst[`RD];
         r__id_ex__rt <= r__if_id__inst[`RT];
@@ -448,6 +452,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             r__if_id__inst <= w__inst;
             r__if_id__pc <= r__pc;
             r__if_id__pred_pc <= w__pred_pc;
+            r__if_id__imm_ext <= w__imm_ext;
         end
 
         // Update PC

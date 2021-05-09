@@ -1,19 +1,23 @@
 `include "opcodes.v" 
 `include "env.v"
 
-module branch_predictor(clk, reset_n, is_flush, is_BJ_type, calculated_pc, current_PC, next_PC);
+`define TRUE   1'b1
+`define FALSE  1'b0
 
+module branch_predictor(clk, reset_n, is_flush, opcode, calculated_pc, current_pc, next_pc, imm);
     input clk;
     input reset_n;
     input is_flush;
-    input is_BJ_type;
+    input [3:0] opcode;
     input [`WORD_SIZE-1:0] calculated_pc;
-    input [`WORD_SIZE-1:0] current_PC; // PC from branch resolve stage
+    input [`WORD_SIZE-1:0] current_pc; // PC from branch resolve stage
+    input [`WORD_SIZE-1:0] imm;
 
-    output [`WORD_SIZE-1:0] next_PC;
+    output [`WORD_SIZE-1:0] next_pc;
 
-    assign next_PC = current_PC + 1;
+    wire is_branch = (opcode == `BNE_OP) || (opcode == `BEQ_OP) || (opcode == `BGZ_OP) || (opcode == `BLZ_OP);
 
-    //TODO: implement branch predictor
-
+    // Always Taken
+    assign next_pc = (is_branch) ? (current_pc + 1 + imm) : (current_pc + 1);
+    
 endmodule
