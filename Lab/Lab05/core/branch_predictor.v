@@ -17,10 +17,6 @@ module branch_predictor(clk, reset_n, is_flush, opcode, calculated_pc, current_p
     wire is_jump = (opcode == `JAL_OP) || (opcode == `JMP_OP) || (opcode == `JRL_OP) || (opcode == `JPR_OP);
 
     // Always Not Taken
-    assign next_pc = (is_branch) ? (current_pc + 1) : (
-        (is_jump) ? (`WORD_SIZE'b0) : (
-            current_pc + 1
-        )
-    );
+    assign next_pc = current_pc + 1;
     
 endmodule
