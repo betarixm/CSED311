@@ -82,7 +82,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [3-1:0] w__func_code;
     wire [2-1:0] w__branch_type;
     wire w__bcond;
-    wire w__branch_address;
+    wire [`WORD_SIZE-1:0] w__branch_address;
 
     //## EX/MEM
     wire w__overflow_flag;
@@ -93,6 +93,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__write_data;
 
     //# Registers
+    reg r__is_flush;
     reg [`WORD_SIZE-1:0] r__pc;
     reg [`WORD_SIZE-1:0] r__memory_register;
     reg [`WORD_SIZE-1:0] r__read_data_1;
@@ -143,14 +144,82 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     assign num_inst = r__num_inst;
 
     initial begin
-        r__pc <= 0;
-        r__num_inst <= 0;
+        r__is_flush = 0;
+        r__pc = 0;
+        r__memory_register = 0;
+        r__read_data_1 = 0;
+        r__read_data_2 = 0;
+        r__num_inst = 0;
+        r__if_id__inst = 0;
+        r__if_id__pc = 0;
+        r__id_ex__pc = 0;
+        r__if_id__pred_pc = 0;
+        r__id_ex__next_pc = 0;
+        r__ex_mem__next_pc = 0;
+        r__mem_wb__next_pc = 0;
+        r__id_ex__read_data_1 = 0;
+        r__ex_mem__read_data_1 = 0;
+        r__mem_wb__read_data_1 = 0;
+        r__id_ex__read_data_2 = 0;
+        r__id_ex__mux_alu_src_b = 0;
+        r__ex_mem__mux_alu_src_b = 0;
+        r__id_ex__imm_ext = 0;
+        r__id_ex__opcode = 0;
+        r__id_ex__funct = 0;
+        r__id_ex__func_code = 0;
+        r__id_ex__rd = 0;
+        r__ex_mem__rd = 0;
+        r__mem_wb__rd = 0;
+        r__id_ex__rt = 0;
+        r__ex_mem__rt = 0;
+        r__mem_wb__rt = 0;
+        r__id_ex__rs = 0;
+        rc__id_ex__reg_write_dest = 0;
+        rc__ex_mem__reg_write_dest = 0;
+        rc__mem_wb__reg_write_dest = 0;
+        r__ex_mem__alu_out = 0;
+        r__mem_wb__alu_out = 0;
+        r__mem_wb__memory_read_data = 0;
     end
     
     always @(*) begin
         if (reset_n) begin
-            r__pc <= 0;
-            r__num_inst <= 0;
+            r__is_flush = 0;
+            r__pc = 0;
+            r__memory_register = 0;
+            r__read_data_1 = 0;
+            r__read_data_2 = 0;
+            r__num_inst = 0;
+            r__if_id__inst = 0;
+            r__if_id__pc = 0;
+            r__id_ex__pc = 0;
+            r__if_id__pred_pc = 0;
+            r__id_ex__next_pc = 0;
+            r__ex_mem__next_pc = 0;
+            r__mem_wb__next_pc = 0;
+            r__id_ex__read_data_1 = 0;
+            r__ex_mem__read_data_1 = 0;
+            r__mem_wb__read_data_1 = 0;
+            r__id_ex__read_data_2 = 0;
+            r__id_ex__mux_alu_src_b = 0;
+            r__ex_mem__mux_alu_src_b = 0;
+            r__id_ex__imm_ext = 0;
+            r__id_ex__opcode = 0;
+            r__id_ex__funct = 0;
+            r__id_ex__func_code = 0;
+            r__id_ex__rd = 0;
+            r__ex_mem__rd = 0;
+            r__mem_wb__rd = 0;
+            r__id_ex__rt = 0;
+            r__ex_mem__rt = 0;
+            r__mem_wb__rt = 0;
+            r__id_ex__rs = 0;
+            rc__id_ex__reg_write_dest = 0;
+            rc__ex_mem__reg_write_dest = 0;
+            rc__mem_wb__reg_write_dest = 0;
+            r__ex_mem__alu_out = 0;
+            r__mem_wb__alu_out = 0;
+            r__mem_wb__memory_read_data = 0;
         end
     end
 
@@ -237,7 +306,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .A(w__read_data_1),
         .B(w__read_data_2),
         .PC(r__if_id__pc),
-        .imm(w__imm_ext),
+        .imm(r__if_id__inst[`IMMD_SIZE-1:0]),
         .branch_type(w__branch_type),
         .next_pc(w__branch_address),
         .bcond(w__bcond)
@@ -251,7 +320,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     forwarding_unit Forwarding_Unit(
         .EXMEM_RegWrite(rc__ex_mem__reg_write),
-        .EXMEM_RegWriteDest(rc__ex_mem__regwrite_dest),
+        .EXMEM_RegWriteDest(rc__ex_mem__reg_write_dest),
         .EXMEM_RD(r__ex_mem__rd),
         .EXMEM_RT(r__ex_mem__rt),
         .MEMWB_RegWrite(rc__mem_wb__reg_write),
@@ -304,7 +373,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     Memory memory(
         .clk(clk),
         .reset_n(reset_n),
-        .read_m1(~is_flush),
+        .read_m1(~r__is_flush),
         .address1(r__pc),
         .data1(w__inst),
         .read_m2(rc__ex_mem__mem_read),
@@ -387,7 +456,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         end
 
         // Flush IF/ID when BP failed
-        if(r__if_id__pred_pc != w__branch_address) begin 
+        if(r__if_id__pred_pc != w__branch_address) begin
             rc__id_ex__mem_write <= 0;
             rc__id_ex__reg_write <= 0;
         end

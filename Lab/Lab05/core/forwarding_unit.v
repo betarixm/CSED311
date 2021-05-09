@@ -12,9 +12,11 @@
 
 
 module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, MEMWB_RegWrite, MEMWB_RegWriteDest, MEMWB_RD, MEMWB_RT, IDEX_RS, IDEX_RT, forward_a, forward_b);
-    input EXMEM_RegWrite, EXMEM_RegWriteDest;
+    input EXMEM_RegWrite;
+    input [2-1:0] EXMEM_RegWriteDest;
     input [`REG_SIZE-1:0] EXMEM_RD, EXMEM_RT;
-    input MEMWB_RegWrite, MEMWB_RegWriteDest;
+    input MEMWB_RegWrite;
+    input [2-1:0] MEMWB_RegWriteDest;
     input [`REG_SIZE-1:0] MEMWB_RD, MEMWB_RT;
     input [`REG_SIZE-1:0] IDEX_RS, IDEX_RT;
 
