@@ -131,10 +131,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     //    PIPELINE REGISTERS END   //
     /////////////////////////////////
 
-
-
-    // TODO: manage halt -> doing with halt pipeline register
-    // TODO: link output_port -> doing with wwd, read_data_1 pipeline register
     assign is_halted = rc__mem_wb__halt;
     assign output_port = rc__mem_wb__wwd ? r__mem_wb__read_data_1 : `WORD_SIZE'b0;
 
@@ -247,7 +243,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     );
 
 
-    // TODO: flush mux
+    // ID/EX flush mux is implemented in sequential logic
 
 
     ////////////// EX ////////////////
@@ -347,15 +343,23 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__id_ex__next_pc <= r__if_id__next_pc;
         rc__id_ex__alu_src <= c__alu_src;
         rc__id_ex__mem_read <= c__mem_read;
-        rc__id_ex__mem_write <= c__mem_write;
+        if (c__hdu_is_stall)
+            rc__id_ex__mem_write <= 1'b0;
+        else
+            rc__id_ex__mem_write <= c__mem_write;
         rc__id_ex__mem_to_reg <= c__mem_to_reg; 
         rc__id_ex__pc_to_reg <= c__pc_to_reg;
-        rc__id_ex__reg_write <= c__reg_write;
+        if (c__hdu_is_stall)
+            rc__id_ex__reg_write <= 1'b0;
+        else
+            rc__id_ex__reg_write <= c__reg_write;
         rc__id_ex__reg_write_dest <= c__reg_write_dest;
         // - IF/ID
-        r__if_id__inst <= r__inst;
-        r__if_id__pc <= r__pc;
-        r__if_id__next_pc <= r__next_pc;
+        if (!c__hdu_is_stall) begin
+            r__if_id__inst <= r__inst;
+            r__if_id__pc <= r__pc;
+            r__if_id__next_pc <= r__next_pc;
+        end
 
         // Update PC
         if(!c__hdu_is_stall) begin
