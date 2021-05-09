@@ -477,13 +477,13 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         end
 
         // Flush IF/ID when BP failed
-        if(c__is_branch && (r__if_id__pred_pc != w__branch_address)) begin
+        if(c__is_jump || (c__is_branch && (r__if_id__pred_pc != w__branch_address))) begin
             r__if_id__inst <= `NOP;
         end
     end
 
     always @(*) begin
-        if (!c__hdu_is_stall) begin
+        if (r__if_id__inst !== `NOP && !c__hdu_is_stall) begin
             r__if_id__inst <= w__inst;
         end
     end
