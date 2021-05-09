@@ -45,7 +45,7 @@ module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, 
             end
         end
 
-        if (MEMWB_RegWrite) begin
+        else if (MEMWB_RegWrite) begin
             if (MEMWB_RegWriteDest == `RD_W) begin
                 if (IDEX_RS == MEMWB_RD) forward_a = `WB;
                 else forward_a = `None;
@@ -64,6 +64,11 @@ module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, 
                 if (IDEX_RT == `TWO_W) forward_b = `WB;
                 else forward_b = `None;
             end
+        end
+
+        else begin
+            forward_a = `None;
+            forward_b = `None;
         end
     end
 
