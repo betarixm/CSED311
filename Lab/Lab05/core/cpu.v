@@ -428,18 +428,18 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     mux4_1 mux__alu_forward_a(
         .sel(c__forward_a),
-        .i1(r__id_ex__read_data_1),     // no forwarding
-        .i2(w__write_data),      // forwarding from WB
-        .i3(r__ex_mem__alu_out), // forwarding from MEM
+        .i1(rc__id_ex__pc_to_reg ? r__id_ex__next_pc : r__id_ex__read_data_1),     // no forwarding
+        .i2(rc__mem_wb__pc_to_reg? r__mem_wb__next_pc : w__write_data),      // forwarding from WB
+        .i3(rc__ex_mem__pc_to_reg ? r__ex_mem__next_pc : r__ex_mem__alu_out), // forwarding from MEM
         .i4(`WORD_SIZE'b0),
         .o(w__alu_src_a_reg)
     );
 
     mux4_1 mux__alu_forward_b(
         .sel(c__forward_b),
-        .i1(r__id_ex__read_data_2),     // no forwarding
-        .i2(w__write_data),      // forwarding from WB
-        .i3(r__ex_mem__alu_out), // forwarding from MEM
+        .i1(rc__id_ex__pc_to_reg ? r__id_ex__next_pc : r__id_ex__read_data_2),     // no forwarding
+        .i2(rc__mem_wb__pc_to_reg? r__mem_wb__next_pc : w__write_data),      // forwarding from WB
+        .i3(rc__ex_mem__pc_to_reg ? r__ex_mem__next_pc : r__ex_mem__alu_out), // forwarding from MEM
         .i4(`WORD_SIZE'b0),
         .o(w__alu_src_b_reg)
     );
