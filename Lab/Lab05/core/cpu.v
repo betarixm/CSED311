@@ -53,6 +53,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire c__is_bj;
     wire c__is_branch;
     wire c__is_jump;
+    wire [2-1:0] c__forward_bc_a;
+    wire [2-1:0] c__forward_bc_b;
 
     // alu
     wire [2-1:0] c__forward_a;
@@ -72,6 +74,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     //## IF/ID
     wire [`WORD_SIZE-1:0] w__inst;
+    wire [`WORD_SIZE-1:0] w__bc_forward_a, w__bc_forward_b;
 
     //## ID/EX
     wire [`WORD_SIZE-1:0] w__pred_pc;
@@ -293,6 +296,39 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     ////////// ID ///////////
 
+    forwarding_unit Forwarding_BC_Unit(
+        .EXMEM_RegWrite(rc__id_ex__reg_write),
+        .EXMEM_RegWriteDest(rc__id_ex__reg_write_dest),
+        .EXMEM_RD(r__id_ex__rd),
+        .EXMEM_RT(r__id_ex__rt),
+        .MEMWB_RegWrite(rc__ex_mem__reg_write),
+        .MEMWB_RegWriteDest(rc__ex_mem__reg_write_dest),
+        .MEMWB_RD(r__ex_mem__rd),
+        .MEMWB_RT(r__ex_mem__rt),
+        .IDEX_RS(r__if_id__inst[`RS]),
+        .IDEX_RT(r__if_id__inst[`RT]),
+        .forward_a(c__forward_bc_a),
+        .forward_b(c__forward_bc_b)
+    );
+
+    mux4_1 mux__bc_forward_a(
+        .sel(c__forward_bc_a),
+        .i1(w__read_data_1),     // no forwarding
+        .i2(r__ex_mem__alu_out),      // forwarding from MEM
+        .i3(w__alu_out), // forwarding from EX
+        .i4(`WORD_SIZE'b0),
+        .o(w__bc_forward_a)
+    );
+
+    mux4_1 mux__bc_forward_b(
+        .sel(c__forward_bc_b),
+        .i1(w__read_data_2),     // no forwarding
+        .i2(r__ex_mem__alu_out),      // forwarding from MEM
+        .i3(w__alu_out), // forwarding from EX
+        .i4(`WORD_SIZE'b0),
+        .o(w__bc_forward_b)
+    );
+
     sign_extender Imm_Extend(
         .immediate(r__if_id__inst[`IMMD_SIZE-1:0]),
         .sign_extended(w__imm_ext)
@@ -357,10 +393,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     );
 
     branch_calculator Branch_Calculator(
-        .A(w__alu_src_a_reg),
-        .B(w__alu_src_b_reg),
+        .A(w__bc_forward_a),
+        .B(w__bc_forward_b),
         .PC(r__if_id__pc),
-        .imm(w__imm_ext),
+        .imm(r__if_id__inst[`IMMD_SIZE-1:0]),
         .is_branch(c__is_branch),
         .is_jump(c__is_jump),
         .branch_type(w__branch_type),
@@ -368,7 +404,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .next_pc(w__branch_address),
         .bcond(w__bcond)
     );
-
 
     // ID/EX flush mux is implemented in sequential logic
 

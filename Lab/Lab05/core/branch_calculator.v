@@ -4,7 +4,7 @@
 module branch_calculator (A, B, PC, imm, is_branch, is_jump, branch_type, jump_type, next_pc, bcond);
 
     input [`WORD_SIZE-1:0] A, B, PC;
-    input [`WORD_SIZE-1:0] imm;
+    input [`IMMD_SIZE-1:0] imm;
     input is_branch, is_jump;
     input [1:0] branch_type;
     input [1:0] jump_type;
@@ -14,7 +14,7 @@ module branch_calculator (A, B, PC, imm, is_branch, is_jump, branch_type, jump_t
     assign next_pc = (is_branch && bcond) ? (PC + imm + 1) : (
         (is_jump) ? (
             (jump_type == `J_JAL || jump_type == `J_JMP) ?
-                ({PC[15:12], imm[11:0]})
+                ({PC[`WORD_SIZE-1:`ADDR_SIZE],4'b0, imm})
                 : A
                 )
             : (
