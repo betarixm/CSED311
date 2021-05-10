@@ -8,7 +8,6 @@
 `include "control_unit.v"
 `include "memory.v"
 `include "branch_calculator.v"
-`include "jump_calculator.v"
 `include "branch_predictor.v"
 `include "hazard.v"
 `include "forwarding_unit.v"
@@ -36,8 +35,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     //# Wires
     //## Control
-    wire c__if__is_bj;
-
     wire c__alu_src;
     wire c__mem_read;
     wire c__mem_write;
@@ -47,10 +44,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire c__halt;
     wire c__wwd;
     wire c__pc_to_reg;
-    wire c__new_inst;
     wire c__hdu_is_stall;
-    wire c__bp_select;
-    wire c__is_bj;
     wire c__is_branch;
     wire c__is_jump;
     wire [2-1:0] c__forward_bc_a;
@@ -62,15 +56,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     wire [`WORD_SIZE-1:0] w__wwd_src;
     //## WB/MEM
-    wire [`WORD_SIZE-1:0] w__addr__pc;
-    wire [`WORD_SIZE-1:0] w__pc__mux;
-    wire [`WORD_SIZE-1:0] w__aout__mux;
-    wire [`WORD_SIZE-1:0] w__mux__memory;
     wire [`WORD_SIZE-1:0] w__data;
 
     //## MEM/IF
-    wire [`WORD_SIZE-1:0] w__memory__inst;
-    wire [`WORD_SIZE-1:0] w__memory__r_memory_register;
 
     //## IF/ID
     wire [`WORD_SIZE-1:0] w__inst;
@@ -83,8 +71,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__read_data_2;
     wire [`REG_SIZE-1:0] w__write_reg;
     wire [`WORD_SIZE-1:0] w__mux__write_data;
-    wire [`WORD_SIZE-1:0] w__alu_a;
-    wire [`WORD_SIZE-1:0] w__alu_b;
     wire [`WORD_SIZE-1:0] w__alu_src_a_reg;
     wire [`WORD_SIZE-1:0] w__alu_src_b_reg;
     wire [3-1:0] w__func_code;
@@ -118,7 +104,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     reg [`WORD_SIZE-1:0] r__if_id__inst;
     reg [`WORD_SIZE-1:0] r__if_id__pc, r__id_ex__pc;
     reg [`WORD_SIZE-1:0] r__if_id__pred_pc, r__id_ex__next_pc, r__ex_mem__next_pc, r__mem_wb__next_pc;
-    reg rc__if_id__valid, rc__id_ex__valid, rc__ex_mem__valid, rc__mem_wb__valid;
+    reg rc__if_id__valid, rc__id_ex__valid, rc__ex_mem__valid;
     
     // from ID/EX
     reg [`WORD_SIZE-1:0] r__ex_mem__wwd_value, r__mem_wb__wwd_value;
@@ -212,7 +198,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__if_id__valid = 0;
         rc__id_ex__valid = 0;
         rc__ex_mem__valid = 0;
-        rc__mem_wb__valid = 0;
         rc__id_ex__hdu_is_stall = 0;
         rc__ex_mem__hdu_is_stall = 0;
         rc__mem_wb__hdu_is_stall = 0;
@@ -261,7 +246,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             rc__if_id__valid = 0;
             rc__id_ex__valid = 0;
             rc__ex_mem__valid = 0;
-            rc__mem_wb__valid = 0;
             rc__id_ex__hdu_is_stall = 0;
             rc__ex_mem__hdu_is_stall = 0;
             rc__mem_wb__hdu_is_stall = 0;
@@ -274,12 +258,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     /// Memory ///
     /// Instruction memory is concatenated to Data memory
     /// See bottom, MEM stage.
-
-    small_control_unit Small_Control(
-        .opcode(r__if_id__inst[`OPCODE]),
-        .funct(r__if_id__inst[`FUNC]),
-        .is_bj(c__if__is_bj)
-    );
 
     branch_predictor Branch_Predictor(
         .clk(clk),
@@ -379,7 +357,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .func_code(w__func_code),
         .branch_type(w__branch_type),
         .jump_type(w__jump_type),
-        .is_bj(c__is_bj),
         .is_branch(c__is_branch),
         .is_jump(c__is_jump)
     );
@@ -505,7 +482,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__mem_wb__pc_to_reg <= rc__ex_mem__pc_to_reg;
         rc__mem_wb__reg_write <= rc__ex_mem__reg_write;
         rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
-        rc__mem_wb__valid <= rc__ex_mem__valid;
         rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
         // - EX/MEM
         if (rc__ex_mem__valid == 1'b1) begin
@@ -588,10 +564,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     always @(*) begin
         if (r__if_id__inst !== `NOP && !haz) begin
-            r__if_id__inst <= w__inst;
+            r__if_id__inst = w__inst;
         end
         if (w__data !== `WORD_SIZE'bX && w__data !== `WORD_SIZE'bZ)
-            r__mem_wb__memory_read_data <= w__data;
+            r__mem_wb__memory_read_data = w__data;
     end
 
 

@@ -30,7 +30,7 @@ module register_file (read_out1, read_out2, read1, read2, dest, write_data, reg_
     always @(*) begin
         if (reset_n) begin
             for(i = 0; i < `NUM_MAX_REGISTER; i = i + 1) begin
-                r[i] <= `WORD_SIZE'd0;
+                r[i] = `WORD_SIZE'd0;
             end
         end
     end
