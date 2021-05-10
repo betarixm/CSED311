@@ -114,6 +114,7 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
                 is_jump = `TRUE;
                 is_jrel = `TRUE;
                 is_jwrite = `TRUE;
+                is_jreg = `TRUE;
             end
             `ALU_OP,
             `JPR_OP,
@@ -133,7 +134,6 @@ module control_unit (opcode, funct, clk, reset_n, alu_src, mem_read, mem_to_reg,
                     `INST_FUNC_JPR: begin
                         jump_type = `J_JPR;
                         is_jump = `TRUE;
-                        is_jreg = `TRUE;
                     end
                     `INST_FUNC_JRL: begin
                         jump_type = `J_JRL;
