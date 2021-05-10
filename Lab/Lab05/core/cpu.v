@@ -119,7 +119,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     // from ID/EX
     reg [`WORD_SIZE-1:0] r__id_ex__read_data_1, r__ex_mem__read_data_1, r__mem_wb__read_data_1; // for wwd
     reg [`WORD_SIZE-1:0] r__id_ex__read_data_2;
-    reg [`WORD_SIZE-1:0] r__id_ex__mux_alu_src_b, r__ex_mem__mux_alu_src_b;
     reg [`WORD_SIZE-1:0] r__id_ex__imm_ext;
     reg [`WORD_SIZE-1:0] r__id_ex__opcode;
     reg [`WORD_SIZE-1:0] r__id_ex__funct;
@@ -139,6 +138,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     // from EX/MEM
     reg [`WORD_SIZE-1:0] r__ex_mem__alu_out, r__mem_wb__alu_out;
+    reg [`WORD_SIZE-1:0] r__ex_mem__mux_alu_src_b;
     
     // form MEM/WB
     reg [`WORD_SIZE-1:0] r__mem_wb__memory_read_data;
@@ -178,7 +178,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__ex_mem__read_data_1 = 0;
         r__mem_wb__read_data_1 = 0;
         r__id_ex__read_data_2 = 0;
-        r__id_ex__mux_alu_src_b = 0;
         r__ex_mem__mux_alu_src_b = 0;
         r__id_ex__imm_ext = 0;
         r__id_ex__opcode = 0;
@@ -218,7 +217,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             r__ex_mem__read_data_1 = 0;
             r__mem_wb__read_data_1 = 0;
             r__id_ex__read_data_2 = 0;
-            r__id_ex__mux_alu_src_b = 0;
             r__ex_mem__mux_alu_src_b = 0;
             r__id_ex__imm_ext = 0;
             r__id_ex__opcode = 0;
@@ -326,6 +324,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     hazard_detect Hazard_Detect(
         .IFID_IR(r__if_id__inst),
         .IDEX_rd(r__id_ex__rd),
+        .IDEX_M_reg_write(rc__id_ex__reg_write),
         .IDEX_M_mem_read(rc__id_ex__mem_read),
         .is_stall(c__hdu_is_stall)
     );
@@ -413,7 +412,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .data2(w__data)
     );
 
-    assign w__data = (rc__ex_mem__mem_write) ? r__read_data_2 : `WORD_SIZE'bz;
+    assign w__data = (rc__ex_mem__mem_write) ? r__ex_mem__mux_alu_src_b : `WORD_SIZE'bz;
 
 
     /////////////// WB ////////////////
@@ -425,8 +424,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     );	
 
 
+    reg haz;
 
     always @(posedge clk) begin
+        haz <= c__hdu_is_stall;
         // update Pipeline Registers
         // - MEM/WB
         r__mem_wb__alu_out <= r__ex_mem__alu_out;
@@ -446,7 +447,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         r__ex_mem__rd <= r__id_ex__rd;
         r__ex_mem__rt <= r__id_ex__rt;
         r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
-        r__ex_mem__mux_alu_src_b <= r__id_ex__mux_alu_src_b;
+        r__ex_mem__mux_alu_src_b <= w__mux_alu_src_b;
         r__ex_mem__next_pc <= r__id_ex__next_pc;
         rc__ex_mem__wwd <= rc__id_ex__wwd;
         rc__ex_mem__halt <= rc__id_ex__halt;
@@ -459,7 +460,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         // - ID/EX
         r__id_ex__read_data_1 <= w__read_data_1;
         r__id_ex__read_data_2 <= w__read_data_2;
-        r__id_ex__mux_alu_src_b <= w__mux_alu_src_b;
         r__id_ex__imm_ext <= w__imm_ext;
         r__id_ex__func_code <= w__func_code;
         r__id_ex__rd <= r__if_id__inst[`RD];
@@ -470,11 +470,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__id_ex__wwd <= c__wwd;
         rc__id_ex__halt <= c__halt;
         rc__id_ex__alu_src <= c__alu_src;
+        rc__id_ex__mem_read <= c__mem_read;
         if (c__hdu_is_stall) begin
-            rc__id_ex__mem_read <= 1'b0;
             rc__id_ex__mem_write <= 1'b0;
         end else begin
-            rc__id_ex__mem_read <= c__mem_read;
             rc__id_ex__mem_write <= c__mem_write;
         end
         rc__id_ex__mem_to_reg <= c__mem_to_reg; 
@@ -485,17 +484,15 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             rc__id_ex__reg_write <= c__reg_write;
         rc__id_ex__reg_write_dest <= c__reg_write_dest;
         // - IF/ID
+        if (r__if_id__pc >= 107) begin
+            r__if_id__pc <= r__if_id__pc;
+        end
         if (!c__hdu_is_stall) begin
             r__if_id__inst <= w__inst;
             r__if_id__pc <= r__pc;
             r__if_id__pred_pc <= w__pred_pc;
-        end
-        else begin
-            r__if_id__inst <= `NOP;
-        end
 
         // Update PC
-        if(!c__hdu_is_stall) begin
             r__num_inst <= r__num_inst + 1;
             if (c__is_branch) begin
                 r__pc <= (r__if_id__pred_pc == w__branch_address) ? w__pred_pc : w__branch_address;
@@ -514,7 +511,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     end
 
     always @(*) begin
-        if (r__if_id__inst !== `NOP && !c__hdu_is_stall) begin
+        if (r__if_id__inst !== `NOP && !haz) begin
             r__if_id__inst <= w__inst;
         end
         if (w__data !== `WORD_SIZE'bX && w__data !== `WORD_SIZE'bZ)
