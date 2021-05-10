@@ -158,7 +158,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .i4(`WORD_SIZE'b0),
         .o(w__wwd_src)
     );
-    assign output_port = rc__mem_wb__wwd ? r__mem_wb__wwd_value : `WORD_SIZE'hdeadbeefdeadbeef;
+    assign output_port = rc__mem_wb__valid ? (
+        rc__mem_wb__wwd ? r__mem_wb__wwd_value : `WORD_SIZE'hdeadbeefdeadbeef ) : (
+        rc__mem_wb__wwd ? r__ex_mem__wwd_value : `WORD_SIZE'hdeadbeefdeadbeef
+        );
 
     assign num_inst = r__num_inst;
 
