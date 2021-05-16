@@ -19,3 +19,7 @@ Simple vending machine FSM implementation with Verilog.
 ### Multi Cycle CPU
 ![datapath](Lab/Lab04/report/datapath.png)
 [Link](Lab/Lab04)
+
+### Pipeline CPU
+![datapath](Lab/Lab05/report/datapath.png)
+[Link](Lab/Lab05)
