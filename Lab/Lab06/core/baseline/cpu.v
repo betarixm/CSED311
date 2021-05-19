@@ -61,6 +61,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     //## MEM/IF
 
     //## IF/ID
+    wire w__if_stall;
     wire [`WORD_SIZE-1:0] w__inst;
     wire [`WORD_SIZE-1:0] w__bc_forward_a, w__bc_forward_b;
 
@@ -87,9 +88,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     wire [`WORD_SIZE-1:0] w__alu_out;
 
     //## MEM/WB
+    wire w__mem_stall;
     wire [`WORD_SIZE-1:0] w__write_data;
 
     //# Registers
+    reg first;
     reg r__is_flush;
     reg [`WORD_SIZE-1:0] r__pc;
     reg [`WORD_SIZE-1:0] r__memory_register;
@@ -104,7 +107,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     reg [`WORD_SIZE-1:0] r__if_id__inst;
     reg [`WORD_SIZE-1:0] r__if_id__pc, r__id_ex__pc;
     reg [`WORD_SIZE-1:0] r__if_id__pred_pc, r__id_ex__next_pc, r__ex_mem__next_pc, r__mem_wb__next_pc;
-    reg rc__if_id__valid, rc__id_ex__valid, rc__ex_mem__valid;
+    reg rc__if_id__valid, rc__id_ex__valid, rc__ex_mem__valid, rc__mem_wb__valid;
     
     // from ID/EX
     reg [`WORD_SIZE-1:0] r__ex_mem__wwd_value, r__mem_wb__wwd_value;
@@ -149,10 +152,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .o(w__wwd_src)
     );
 
-    assign output_port = rc__mem_wb__wwd ? (
+    assign output_port = (rc__mem_wb__wwd && rc__mem_wb__valid) ? (
         rc__mem_wb__hdu_is_stall ? 
             r__ex_mem__wwd_value : r__mem_wb__wwd_value
-        ) : `WORD_SIZE'hdeadbeefdeadbeef;
+        ) : output_port;
 
     assign num_inst = r__num_inst;
 
@@ -201,6 +204,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__id_ex__hdu_is_stall = 0;
         rc__ex_mem__hdu_is_stall = 0;
         rc__mem_wb__hdu_is_stall = 0;
+        first = 1;
     end
     
     always @(*) begin
@@ -249,6 +253,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             rc__id_ex__hdu_is_stall = 0;
             rc__ex_mem__hdu_is_stall = 0;
             rc__mem_wb__hdu_is_stall = 0;
+            first = 1;
         end
     end
 
@@ -445,10 +450,12 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .read_m1(~r__is_flush),
         .address1(r__pc),
         .data1(w__inst),
-        .read_m2(rc__ex_mem__mem_read | rc__mem_wb__mem_read),
+        .read_m2((rc__ex_mem__valid & rc__ex_mem__mem_read) | (rc__ex_mem__valid & rc__mem_wb__mem_read)),
         .write_m2(rc__ex_mem__mem_write),
         .address2(r__ex_mem__alu_out),
-        .data2(w__data)
+        .data2(w__data),
+        .if_stall(w__if_stall),
+        .mem_stall(w__mem_stall)
     );
 
     assign w__data = (rc__ex_mem__mem_write) ? r__ex_mem__read_data_2 : `WORD_SIZE'bz;
@@ -464,9 +471,13 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
 
     reg haz;
+    reg if_stall;
 
     always @(posedge clk) begin
         haz <= c__hdu_is_stall;
+        if_stall <= w__if_stall;
+        r__is_flush <= 1'b0;
+
         // update Pipeline Registers
         // - MEM/WB
         r__mem_wb__wwd_value <= r__ex_mem__wwd_value;
@@ -482,89 +493,110 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__mem_wb__pc_to_reg <= rc__ex_mem__pc_to_reg;
         rc__mem_wb__reg_write <= rc__ex_mem__reg_write;
         rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
+        rc__mem_wb__valid <= rc__ex_mem__valid;
         rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
-        // - EX/MEM
-        if (rc__ex_mem__valid == 1'b1) begin
-            r__num_inst <= r__num_inst + 1;
-        end
-        r__ex_mem__wwd_value <= w__wwd_src;
-        r__ex_mem__alu_out <= w__alu_out;
-        r__ex_mem__rd <= r__id_ex__rd;
-        r__ex_mem__rt <= r__id_ex__rt;
-        r__ex_mem__mux_alu_src_b <= w__mux_alu_src_b;
-        r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
-        r__ex_mem__read_data_2 <= r__id_ex__read_data_2;
-        r__ex_mem__next_pc <= r__id_ex__next_pc;
-        rc__ex_mem__wwd <= rc__id_ex__wwd;
-        rc__ex_mem__halt <= rc__id_ex__halt;
-        rc__ex_mem__mem_read <= rc__id_ex__mem_read;
-        rc__ex_mem__mem_write <= rc__id_ex__mem_write;
-        rc__ex_mem__mem_to_reg <= rc__id_ex__mem_to_reg;
-        rc__ex_mem__pc_to_reg <= rc__id_ex__pc_to_reg;
-        rc__ex_mem__reg_write <= rc__id_ex__reg_write;
-        rc__ex_mem__reg_write_dest <= rc__id_ex__reg_write_dest;
-        rc__ex_mem__valid <= rc__id_ex__valid;
-        rc__ex_mem__hdu_is_stall <= rc__id_ex__hdu_is_stall;
-        // - ID/EX
-        r__id_ex__read_data_1 <= w__read_data_1;
-        r__id_ex__read_data_2 <= w__read_data_2;
-        r__id_ex__imm_ext <= w__imm_ext;
-        r__id_ex__func_code <= w__func_code;
-        r__id_ex__rd <= r__if_id__inst[`RD];
-        r__id_ex__rt <= r__if_id__inst[`RT];
-        r__id_ex__rs <= r__if_id__inst[`RS];
-        r__id_ex__pc <= r__if_id__pc;
-        r__id_ex__next_pc <= r__if_id__pred_pc;
-        rc__id_ex__wwd <= c__wwd;
-        rc__id_ex__halt <= c__halt;
-        rc__id_ex__alu_src <= c__alu_src;
-        rc__id_ex__mem_read <= c__mem_read;
-        rc__id_ex__valid <= rc__if_id__valid;
-        rc__id_ex__hdu_is_stall <= c__hdu_is_stall;
-        if (c__hdu_is_stall) begin
-            rc__id_ex__mem_write <= 1'b0;
+
+        if (w__mem_stall) begin
+            rc__mem_wb__reg_write <= 1'b0;
         end else begin
-            rc__id_ex__mem_write <= c__mem_write;
-        end
-        rc__id_ex__mem_to_reg <= c__mem_to_reg; 
-        rc__id_ex__pc_to_reg <= c__pc_to_reg;
-        if (c__hdu_is_stall)
-            rc__id_ex__reg_write <= 1'b0;
-        else
-            rc__id_ex__reg_write <= c__reg_write;
-        rc__id_ex__reg_write_dest <= c__reg_write_dest;
-        // - IF/ID
-        if (!c__hdu_is_stall) begin
-            rc__if_id__valid <= 1'b1;
-            r__if_id__inst <= w__inst;
-            r__if_id__pc <= r__pc;
-            r__if_id__pred_pc <= w__pred_pc;
-
-        // Update PC
-            if (c__is_branch) begin
-                rc__if_id__valid <= (r__if_id__pred_pc == w__branch_address) ? 1'b1 : 1'b0;
-                r__pc <= (r__if_id__pred_pc == w__branch_address) ? w__pred_pc : w__branch_address;
-            end else if (c__is_jump) begin
-                rc__if_id__valid <= 1'b0;
-                r__pc <= w__branch_address;
-            end else begin
-                r__pc <= w__pred_pc;
+            // - EX/MEM
+            if (rc__ex_mem__valid == 1'b1) begin
+                r__num_inst <= r__num_inst + 1;
             end
-        end
-        else
-            rc__id_ex__valid <= 1'b0;
+            r__ex_mem__wwd_value <= w__wwd_src;
+            r__ex_mem__alu_out <= w__alu_out;
+            r__ex_mem__rd <= r__id_ex__rd;
+            r__ex_mem__rt <= r__id_ex__rt;
+            r__ex_mem__mux_alu_src_b <= w__mux_alu_src_b;
+            r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
+            r__ex_mem__read_data_2 <= r__id_ex__read_data_2;
+            r__ex_mem__next_pc <= r__id_ex__next_pc;
+            rc__ex_mem__wwd <= rc__id_ex__wwd;
+            rc__ex_mem__halt <= rc__id_ex__halt;
+            rc__ex_mem__mem_read <= rc__id_ex__mem_read;
+            rc__ex_mem__mem_write <= rc__id_ex__mem_write;
+            rc__ex_mem__mem_to_reg <= rc__id_ex__mem_to_reg;
+            rc__ex_mem__pc_to_reg <= rc__id_ex__pc_to_reg;
+            rc__ex_mem__reg_write <= rc__id_ex__reg_write;
+            rc__ex_mem__reg_write_dest <= rc__id_ex__reg_write_dest;
+            rc__ex_mem__valid <= rc__id_ex__valid;
+            rc__ex_mem__hdu_is_stall <= rc__id_ex__hdu_is_stall;
+            // - ID/EX
+            r__id_ex__read_data_1 <= w__read_data_1;
+            r__id_ex__read_data_2 <= w__read_data_2;
+            r__id_ex__imm_ext <= w__imm_ext;
+            r__id_ex__func_code <= w__func_code;
+            r__id_ex__rd <= r__if_id__inst[`RD];
+            r__id_ex__rt <= r__if_id__inst[`RT];
+            r__id_ex__rs <= r__if_id__inst[`RS];
+            r__id_ex__pc <= r__if_id__pc;
+            r__id_ex__next_pc <= r__if_id__pred_pc;
+            rc__id_ex__wwd <= c__wwd;
+            rc__id_ex__halt <= c__halt;
+            rc__id_ex__alu_src <= c__alu_src;
+            rc__id_ex__mem_read <= c__mem_read;
+            rc__id_ex__valid <= rc__if_id__valid;
+            rc__id_ex__hdu_is_stall <= c__hdu_is_stall;
+            if (c__hdu_is_stall) begin
+                rc__id_ex__mem_write <= 1'b0;
+            end else begin
+                rc__id_ex__mem_write <= c__mem_write;
+            end
+            rc__id_ex__mem_to_reg <= c__mem_to_reg; 
+            rc__id_ex__pc_to_reg <= c__pc_to_reg;
+            if (c__hdu_is_stall)
+                rc__id_ex__reg_write <= 1'b0;
+            else
+                rc__id_ex__reg_write <= c__reg_write;
+            rc__id_ex__reg_write_dest <= c__reg_write_dest;
 
-        // Flush IF/ID when BP failed
-        if(c__is_jump || (c__is_branch && (r__if_id__pred_pc != w__branch_address))) begin
-            rc__if_id__valid <= 1'b0;
-            r__if_id__inst <= `NOP;
-        end
+            if (w__if_stall | first) begin
+                first <= 1'b0;
+                rc__if_id__valid <= 1'b0;
+                r__if_id__inst <= `NOP;
+            end else begin
+                // - IF/ID
+                if (!c__hdu_is_stall) begin
+                    rc__if_id__valid <= 1'b1;
+                    r__if_id__inst <= w__inst;
+                    r__if_id__pc <= r__pc;
+                    r__if_id__pred_pc <= w__pred_pc;
 
-    end
+                // Update PC
+                    if (c__is_branch) begin
+                        rc__if_id__valid <= (r__if_id__pred_pc == w__branch_address) ? 1'b1 : 1'b0;
+                        r__pc <= (r__if_id__pred_pc == w__branch_address) ? w__pred_pc : w__branch_address;
+                    end else if (c__is_jump) begin
+                        rc__if_id__valid <= 1'b0;
+                        r__pc <= w__branch_address;
+                    end else begin
+                        r__pc <= w__pred_pc;
+                    end
+                end
+                else
+                    rc__id_ex__valid <= 1'b0;
+
+                // Flush IF/ID when BP failed
+                if(c__is_jump || (c__is_branch && (r__if_id__pred_pc != w__branch_address))) begin
+                    r__is_flush <= 1'b1;
+                    rc__if_id__valid <= 1'b0;
+                    r__if_id__inst <= `NOP;
+                end 
+
+            end  // end not if_stall
+
+        end  // end not mem_stall
+    end // end always posedge clk
 
     always @(*) begin
-        if (r__if_id__inst !== `NOP && !haz) begin
-            r__if_id__inst = w__inst;
+        if (w__if_stall) begin
+            rc__if_id__valid = 1'b0;
+            r__if_id__inst = `NOP;
+        end else begin
+            if ((r__if_id__inst !== `NOP && !haz) || if_stall) begin
+                rc__if_id__valid = 1'b1;
+                r__if_id__inst = w__inst;
+            end
         end
         if (w__data !== `WORD_SIZE'bX && w__data !== `WORD_SIZE'bZ)
             r__mem_wb__memory_read_data = w__data;
