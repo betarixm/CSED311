@@ -4,7 +4,7 @@
 `define WORD_SIZE 16	//	instead of 2^16 words to reduce memory
             //	requirements in the Active-HDL simulator 
 
-module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, if_stall, mem_stall);
+module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, m1_ready, m2_ready);
     input clk;
     wire clk;
     input reset_n;
@@ -26,27 +26,25 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     inout data2;
     wire [`WORD_SIZE-1:0] data2;
 
-    reg [3:0] timer_if_stall;
-    output if_stall;
-    reg [3:0] timer_mem_stall;
-    output mem_stall;
+    reg [3:0] timer_m1_ready;
+    output m1_ready;
+    reg [3:0] timer_m2_ready;
+    output m2_ready;
     
     reg [`WORD_SIZE-1:0] memory [0:`MEMORY_SIZE-1];
     reg [`WORD_SIZE-1:0] output_data2;
     
     assign data2 = read_m2?output_data2:`WORD_SIZE'bz;
 
-    assign if_stall = (timer_if_stall != 0);
-    assign mem_stall = (timer_mem_stall != 0 | read_m2);
-
-    initial begin
-        timer_if_stall <= 0;
-        timer_mem_stall <= 0;
-    end
+    assign m1_ready = (timer_m1_ready == 0);
+    assign m2_ready = (timer_m2_ready == 0);
 
     always@(posedge clk)
         if(!reset_n)
             begin
+                timer_m1_ready <= 1;
+                timer_m2_ready <= 0;
+
                 memory[16'h0] <= 16'h9023;
                 memory[16'h1] <= 16'h1;
                 memory[16'h2] <= 16'hffff;
@@ -250,27 +248,27 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
         else
             begin
                 if(read_m1) begin
-                    if(timer_if_stall == 0)  timer_if_stall  <= 2;
-                    else begin
-                        if(timer_if_stall == 1)
-                            data1 <= (write_m2 & address1==address2)?data2:memory[address1];
-                        timer_if_stall   <=  timer_if_stall  - 1;
+                    if(timer_m1_ready == 0) begin
+                        data1 <= (write_m2 & address1==address2)?data2:memory[address1];
+                        timer_m1_ready  <=  2-1;
+                    end else begin
+                        timer_m1_ready  <=  timer_m1_ready  - 1;
                     end
                 end
                 if(read_m2) begin
-                    if(timer_mem_stall == 0) timer_mem_stall <= 2;
-                    else begin
-                        if(timer_mem_stall == 1)
-                            output_data2 <= memory[address2];
-                        timer_mem_stall  <=  timer_mem_stall - 1;
+                    if(timer_m2_ready == 0) begin
+                        output_data2 <= memory[address2];
+                        timer_m2_ready  <=  2-1;
+                    end else begin
+                        timer_m2_ready  <=  timer_m2_ready - 1;
                     end
                 end
                 else if(write_m2) begin
-                    if(timer_mem_stall == 0) timer_mem_stall <= 2;
-                    else begin
-                        if(timer_mem_stall == 1)
-                            memory[address2] <= data2;
-                        timer_mem_stall  <=  timer_mem_stall - 1;
+                    if(timer_m2_ready == 0) begin
+                        memory[address2] <= data2;
+                        timer_m2_ready  <=  2-1;
+                    end else begin
+                        timer_m2_ready  <=  timer_m2_ready - 1;
                     end
                 end
             end
