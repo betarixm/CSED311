@@ -18,16 +18,23 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
     input wire clk;
     
     wire is_hit;
+    wire idx;
 
     reg [12:0] cache__tag[4];
     reg cache__valid[4];
     reg [64:0] cache__data[4];
     reg [`WORD_SIZE-1:0] cache__lru[4];
     
-    assign is_hit = cache__valid[IDX] | cache__valid[IDX + 2];
+    assign idx = addr[IDX];
+    assign is_hit = (cache__valid[idx] & (cache__tag[idx] == addr[TAG])) | (cache__valid[idx + 2] && cache__tag[idx + 2] == addr[TAG]);
 
     always @(*) begin
-        
+        if(is_hit) begin
+            // Hit
+
+        end else begin
+            
+        end
     end
 
     always @(posedge clk) begin
