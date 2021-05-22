@@ -416,7 +416,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     hazard_detect Hazard_Detect(
         .IFID_IR(r__if_id__inst),
+        .IFID_M_valid(rc__if_id__valid),
         .IDEX_rd(r__id_ex__rd),
+        .IDEX_M_valid(rc__id_ex__valid),
         .IDEX_M_reg_write(rc__id_ex__reg_write),
         .IDEX_M_mem_read(rc__id_ex__mem_read),
         .is_stall(c__hdu_is_stall)
@@ -498,8 +500,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     assign read_m2 = (rc__ex_mem__valid & rc__ex_mem__mem_read) | (rc__ex_mem__valid & rc__mem_wb__mem_read);
     assign write_m2 = rc__ex_mem__mem_write;
     assign address2 = r__ex_mem__alu_out;
+    assign data2 = (rc__ex_mem__mem_write) ? r__ex_mem__read_data_2 : `WORD_SIZE'bz;
     assign w__inst = data1;
-    assign w__data = (rc__ex_mem__mem_write) ? r__ex_mem__read_data_2 : `WORD_SIZE'bz;
+    assign w__data = data2;
     assign w__m1_ready = m1_ready;
     assign w__m2_ready = m2_ready;
 
