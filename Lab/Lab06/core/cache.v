@@ -24,7 +24,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
     reg [12:0] cache__tag[4];
     reg cache__valid[4];
     reg [63:0] cache__data[4];
-    reg [`WORD_SIZE-1:0] cache__lru[4];
+    reg cache__lru[4];
     
     assign idx = addr[IDX];
 
@@ -47,13 +47,6 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
         // TODO: Reset to 0 when logic end
         clk_counter <= clk_counter + 1;
 
-        // Update LRU
-        // TODO: Do not update the un-hit entry. (On hit logic)
-        cache__lru[0] <= cache__lru[0] + 1;
-        cache__lru[1] <= cache__lru[1] + 1;
-        cache__lru[2] <= cache__lru[2] + 1;
-        cache__lru[3] <= cache__lru[3] + 1;
-
         // Hit
         is_hit <= (cache__valid[idx] & (cache__tag[idx] == addr[TAG])) | (cache__valid[idx + 2] && cache__tag[idx + 2] == addr[TAG]);
 
@@ -63,7 +56,17 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
             // Watch out for non-blocking
 
             if(c__read_m) begin
-                o__data <= (cache__valid[idx]) ? (cache__data[idx][16 * addr[OFF]:16 * addr[OFF]+15]) : (cache__data[idx + 2][16 * addr[OFF]:16 * addr[OFF]+15]);
+                if(cache__valid[idx]) begin
+                    o__data <= cache__data[idx][`WORD_SIZE * addr[`OFF]:`WORD_SIZE * (addr[`OFF] + 1) - 1];
+                    // Update LRU
+                    cache__lru[idx] <= 1;
+                    cache__lru[~idx] <= 0;
+                end else begin
+                    o__data <= cache__data[idx + 2][`WORD_SIZE * addr[`OFF]:`WORD_SIZE * (addr[`OFF] + 1) - 1]
+                    // Update LRU
+                    cache__lru[2 + idx] <= 1;
+                    cache__lru[2 + (~idx)] <= 0; 
+                end
                 clk_counter <= 0; // Reset clk counter; Need to check race condition
                 c__valid <= 1; // Turn on valid-control-signal; It will be turned off at next posedge
             end
