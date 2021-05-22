@@ -39,6 +39,10 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
 
     // Sequential Logic
     always @(posedge clk) begin
+        // Valid
+        // Valid-control-signal is basically turned off.
+        c__valid <= 0;
+
         // Update Clk Counter
         // TODO: Reset to 0 when logic end
         clk_counter <= clk_counter + 1;
@@ -61,6 +65,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
             if(c__read_m) begin
                 o__data <= (cache__valid[idx]) ? (cache__data[idx][16 * addr[OFF]:16 * addr[OFF]+15]) : (cache__data[idx + 2][16 * addr[OFF]:16 * addr[OFF]+15]);
                 clk_counter <= 0; // Reset clk counter; Need to check race condition
+                c__valid <= 1; // Turn on valid-control-signal; It will be turned off at next posedge
             end
         end else begin 
             // When Not Hit
