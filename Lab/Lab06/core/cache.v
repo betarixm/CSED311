@@ -22,7 +22,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
 
     reg [12:0] cache__tag[4];
     reg cache__valid[4];
-    reg [64:0] cache__data[4];
+    reg [63:0] cache__data[4];
     reg [`WORD_SIZE-1:0] cache__lru[4];
     
     assign idx = addr[IDX];
