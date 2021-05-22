@@ -57,12 +57,12 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
 
             if(c__read_m) begin
                 if(cache__valid[idx]) begin
-                    o__data <= cache__data[idx][`WORD_SIZE * addr[`OFF]:`WORD_SIZE * (addr[`OFF] + 1) - 1];
+                    o__data <= cache__data[idx][`WORD_SIZE * (addr[`OFF] + 1) - 1:`WORD_SIZE * addr[`OFF]];
                     // Update LRU
                     cache__lru[idx] <= 1;
                     cache__lru[~idx] <= 0;
                 end else begin
-                    o__data <= cache__data[idx + 2][`WORD_SIZE * addr[`OFF]:`WORD_SIZE * (addr[`OFF] + 1) - 1]
+                    o__data <= cache__data[idx + 2][`WORD_SIZE * (addr[`OFF] + 1) - 1:`WORD_SIZE * addr[`OFF]]
                     // Update LRU
                     cache__lru[2 + idx] <= 1;
                     cache__lru[2 + (~idx)] <= 0; 
