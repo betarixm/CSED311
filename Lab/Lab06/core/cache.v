@@ -1,7 +1,7 @@
 `include "env.v" 
 `include "opcodes.v" 
 
-`define TAG 4:15
+`define TAG 15:4
 `define IDX 3
 `define OFF 2:1
 
