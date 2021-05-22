@@ -3,7 +3,7 @@
 
 `define TAG 4:15
 `define IDX 3
-`define OFF 0:2
+`define OFF 2:1
 
 module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m, m__write_m, m__addr, m__data_out, m__is_stall, clk);
     input wire c__read_m, c__write_m;
