@@ -38,7 +38,11 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__valid, m__read_m,
     end
 
     always @(posedge clk) begin
-        
+        // Update LRU
+        cache__lru[0] = cache__lru[0] + 1;
+        cache__lru[1] = cache__lru[1] + 1;
+        cache__lru[2] = cache__lru[2] + 1;
+        cache__lru[3] = cache__lru[3] + 1;
     end
 
 endmodule
