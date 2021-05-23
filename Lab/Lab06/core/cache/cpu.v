@@ -526,7 +526,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     cache d_cache(
         .c__read_m(rc__ex_mem__valid & rc__ex_mem__mem_read),
-        .c__write_m(rc__ex_mem__mem_write),
+        .c__write_m(rc__ex_mem__valid & rc__ex_mem__mem_write),
         .addr(r__ex_mem__alu_out),
         .i__data(r__ex_mem__read_data_2),
         .o__data(w__data),
