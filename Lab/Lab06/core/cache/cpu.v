@@ -676,8 +676,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
             end
             else begin
                 r__new_inst <= 1'b1;
-                $display("instruction (%d) fetched. res : %h", r__pc, w__inst);
-                $display("flush? %d", r__is_flush);
                 if (r__is_flush) begin     // fetch done, but we'll flush that
                     r__is_flush <= 1'b0;
                     rc__if_id__valid <= 1'b0;

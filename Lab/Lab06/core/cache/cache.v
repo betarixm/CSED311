@@ -51,10 +51,10 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     assign c__ready = (c__state == `STATE_READY || c__state == `STATE_READY_PARALLEL);
     assign m__data = (c__state == `STATE_WRITE) ? m__data_out : `QWORD_SIZE'bz;
 
-    assign data_0 = (cache__valid[idx]) ? cache__data[idx][`WORD_SIZE * 1 - 1:`WORD_SIZE * 0] : cache__data[idx + 2][`WORD_SIZE * 1 - 1:`WORD_SIZE * 0];
-    assign data_1 = (cache__valid[idx]) ? cache__data[idx][`WORD_SIZE * 2 - 1:`WORD_SIZE * 1] : cache__data[idx + 2][`WORD_SIZE * 2 - 1:`WORD_SIZE * 1];
-    assign data_2 = (cache__valid[idx]) ? cache__data[idx][`WORD_SIZE * 3 - 1:`WORD_SIZE * 2] : cache__data[idx + 2][`WORD_SIZE * 3 - 1:`WORD_SIZE * 2];
-    assign data_3 = (cache__valid[idx]) ? cache__data[idx][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3] : cache__data[idx + 2][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3];
+    assign data_0 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 1 - 1:`WORD_SIZE * 0] : cache__data[idx + 2][`WORD_SIZE * 1 - 1:`WORD_SIZE * 0];
+    assign data_1 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 2 - 1:`WORD_SIZE * 1] : cache__data[idx + 2][`WORD_SIZE * 2 - 1:`WORD_SIZE * 1];
+    assign data_2 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 3 - 1:`WORD_SIZE * 2] : cache__data[idx + 2][`WORD_SIZE * 3 - 1:`WORD_SIZE * 2];
+    assign data_3 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3] : cache__data[idx + 2][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3];
 
     initial begin
         cache__lru[0] = 0; 
@@ -160,7 +160,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
             if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL) begin
                 if(is_hit) begin // When cache hit occurs
                     // Data array access
-                    if(cache__valid[idx]) begin
+                    if(cache__valid[idx] && (cache__tag[idx] == addr[`TAG])      ) begin
                         // Set 0
 		                $display("cache_data [%d][offset: %d] : %h", idx, addr[`OFF], cache__data[idx]);
                         case(addr[`OFF])
@@ -173,6 +173,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                         cache__lru[idx] <= 0;
                         cache__lru[~idx] <= 1;
                     end else begin
+		                $display("cache_data [%d][offset: %d] : %h", idx, addr[`OFF], cache__data[idx+2]);
                         // Set 1
                         case(addr[`OFF])
                             0: o__data <= cache__data[2 + idx][`WORD_SIZE*1-1 : `WORD_SIZE*0];
@@ -191,7 +192,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                     if(c__state == `STATE_READ) begin
                         // Prepare for reading new data
                         m__read_m <= 1;
-                        m__addr <= addr;
+                        m__addr <= {addr[`WORD_SIZE-1:2], 2'b00}; // aligned address
                         // Will wait for memory read
                         c__state <= `STATE_MEM_RD;
                     end else if(c__state == `STATE_READ_PARALLEL) begin
