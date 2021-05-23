@@ -61,6 +61,11 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
         cache__lru[2] = 0; 
         cache__lru[3] = 0;
 
+        cache__valid[0] = 0; 
+        cache__valid[1] = 0; 
+        cache__valid[2] = 0; 
+        cache__valid[3] = 0;
+
         c__state = `STATE_READY;
     end
 
@@ -103,7 +108,17 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     // Sequential Logic
     always @(posedge clk) begin
         if(!reset_n) begin
-            c__state = `STATE_READY;
+            cache__lru[0] <= 0; 
+            cache__lru[1] <= 0; 
+            cache__lru[2] <= 0; 
+            cache__lru[3] <= 0;
+
+            cache__valid[0] <= 0; 
+            cache__valid[1] <= 0; 
+            cache__valid[2] <= 0; 
+            cache__valid[3] <= 0;
+
+            c__state <= `STATE_READY;
         end else if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL) begin
             if(is_hit) begin // When cache hit occurs
                 // Data array access
