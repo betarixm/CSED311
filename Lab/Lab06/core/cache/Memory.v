@@ -3,10 +3,10 @@
 `define MEMORY_SIZE 256	//	size of memory is 2^8 words (reduced size)
 `define WORD_SIZE 16	//	instead of 2^16 words to reduce memory
             //	requirements in the Active-HDL simulator 
-
+`define QWORD_SIZE 64
 `define IDLE 4'd1111
 
-module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, m1_ready, m1_ack, m2_ready, m2_ack);
+module Memory(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, write_q2, address2, data2, qdata2, m1_ready, m1_ack, m2_ready, m2_ack);
     input clk;
     wire clk;
     input reset_n;
@@ -18,15 +18,21 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     wire [`WORD_SIZE-1:0] address1;
     output data1;
     reg [`WORD_SIZE-1:0] data1;
+    output qdata1;
+    reg [`QWORD_SIZE-1:0] qdata1;
     
     input read_m2;
     wire read_m2;
     input write_m2;
     wire write_m2;
+    input write_q2;
+    wire write_q2;
     input [`WORD_SIZE-1:0] address2;
     wire [`WORD_SIZE-1:0] address2;
     inout data2;
     wire [`WORD_SIZE-1:0] data2;
+    inout qdata2;
+    wire [`QWORD_SIZE-1:0] qdata2;
 
     reg [4-1:0] timer_m1_ready;
     output m1_ready;
@@ -37,7 +43,9 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     
     reg [`WORD_SIZE-1:0] memory [0:`MEMORY_SIZE-1];
     reg [`WORD_SIZE-1:0] output_data2;
-    
+    reg [`QWORD_SIZE-1:0] output_qdata2;
+
+    assign qdata2 = read_m2?output_qdata2:`QWORD_SIZE'bz;
     assign data2 = read_m2?output_data2:`WORD_SIZE'bz;
 
     assign m1_ready = (timer_m1_ready == `IDLE);
@@ -256,7 +264,8 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
                 if(read_m1) begin
                     if(timer_m1_ready == `IDLE) begin
                         timer_m1_ready  <=  6-2;
-                        data1 <= (write_m2 & address1==address2)?data2:memory[address1];
+                        data1 <= ((write_m2|write_q2) & address1==address2)?data2:memory[address1];
+                        qdata1 <= ((write_m2|write_q2) & address1==address2)?qdata2:{memory[address1+3], memory[address1+2], memory[address1+1], memory[address1]};
                         m1_ack <= 0;
                     end else if(timer_m1_ready > 0) begin
                         timer_m1_ready  <=  timer_m1_ready  - 1;
@@ -273,6 +282,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
                     if(timer_m2_ready == `IDLE) begin
                         timer_m2_ready  <=  6-2;
                         output_data2 <= memory[address2];
+                        output_qdata2 <= {memory[address2 + 3], memory[address2 + 2], memory[address2 + 1], memory[address2]};
                         m2_ack <= 0;
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
@@ -282,10 +292,16 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
                         m2_ack <= 1;
                     end
                 end
-                else if(write_m2) begin
+                else if(write_m2 | write_q2) begin
                     if(timer_m2_ready == `IDLE) begin
                         timer_m2_ready  <=  6-2;
-                        memory[address2] <= data2;
+                        if (write_m2) memory[address2] <= data2;
+                        else if (write_q2) begin
+                            memory[address2 + 0] <= qdata2[`WORD_SIZE * 1 - 1:`WORD_SIZE * 0];
+                            memory[address2 + 1] <= qdata2[`WORD_SIZE * 2 - 1:`WORD_SIZE * 1];
+                            memory[address2 + 2] <= qdata2[`WORD_SIZE * 3 - 1:`WORD_SIZE * 2];
+                            memory[address2 + 3] <= qdata2[`WORD_SIZE * 4 - 1:`WORD_SIZE * 3];
+                        end
                         m2_ack <= 0;
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;

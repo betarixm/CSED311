@@ -5,36 +5,39 @@
 `define INST 0
 `define DATA 1
 
-module memory_io(clk, reset_n, data1, data2, m1_ready, m1_ack, m2_ready, m2_ack, read_inst, read_data, write_data, addr_inst, addr_data, read_m1, read_m2, write_m2, address1, address2, res_inst, res_data);
+module memory_io(clk, reset_n, data1, qdata1, data2, qdata2, m1_ready, m1_ack, m2_ready, m2_ack, read_inst, read_data, write_data, addr_inst, addr_data, read_m1, read_m2, write_m2, write_q2, size_m2, address1, address2, res_inst, res_data);
     input clk;
     input reset_n;
 
     input [`WORD_SIZE-1:0] data1, data2;
+    input [`QWORD_SIZE-1:0] qdata1, qdata2;
     input m1_ready, m1_ack, m2_ready, m2_ack;
 
     input read_inst, read_data, write_data;
     input [`WORD_SIZE-1:0] addr_inst, addr_data;
+    input [`WORD_SIZE-1:0] size_m2;
 
     reg m1_type, m2_type;
     wire inst_reading, data_reading;
 
-    output reg read_m1, read_m2, write_m2;
+    output reg read_m1, read_m2, write_m2, write_q2;
     output reg [`WORD_SIZE-1:0] address1, address2;
 
-    output reg [`WORD_SIZE-1:0] res_inst, res_data;
+    output reg [`QWORD_SIZE-1:0] res_inst, res_data;
 
     
     initial begin
         read_m1 = 0;
         read_m2 = 0;
         write_m2 = 0;
+        write_q2 = 0;
 
         m1_type = `INST;
         m2_type = `DATA;
     end
 
-    assign res_inst = (m1_type == `INST) ? data1 : data2;
-    assign res_data = (m2_type == `DATA) ? data2 : data1;
+    assign res_inst = (m1_type == `INST) ? qdata1 : qdata2;
+    assign res_data = (m2_type == `DATA) ? qdata2 : qdata1;
 
     assign inst_reading = (~m1_ready & ~m1_ack & m1_type == `INST) | (~m2_ready & ~m2_ack & m2_type == `INST);
     assign data_reading = (~m1_ready & ~m1_ack & m1_type == `DATA) | (~m2_ready & ~m2_ack & m2_type == `DATA);
@@ -52,6 +55,7 @@ module memory_io(clk, reset_n, data1, data2, m1_ready, m1_ack, m2_ready, m2_ack,
             read_m1 <= 0;
             read_m2 <= 0;
             write_m2 <= 0;
+            write_q2 <= 0;
 
             m1_type <= `INST;
             m2_type <= `DATA;
@@ -65,6 +69,7 @@ module memory_io(clk, reset_n, data1, data2, m1_ready, m1_ack, m2_ready, m2_ack,
         if (m2_ack) begin
             read_m2 = 0;
             write_m2 = 0;
+            write_q2 = 0;
         end
 
         if (read_inst & ~inst_reading) begin
@@ -91,7 +96,8 @@ module memory_io(clk, reset_n, data1, data2, m1_ready, m1_ack, m2_ready, m2_ack,
         else if (write_data & ~data_writing) begin
             if (m2_ready) begin
                 m2_type = `DATA;
-                write_m2 = 1;
+                if (size_m2 == `WORD_SIZE) write_m2 = 1;
+                if (size_m2 == `QWORD_SIZE) write_q2 = 1;
             end
         end
 

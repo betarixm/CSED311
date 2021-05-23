@@ -18,7 +18,7 @@
 `define STATE_WRITE_PARALLEL 3'd7
 
 
-module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m, m__write_m, m__addr, m__size, m__data, m__ready, clk);
+module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m, m__write_m, m__addr, m__size, m__data, m__ready, clk, reset_n);
     input c__read_m, c__write_m;
     input [`WORD_SIZE-1:0] addr;
     input [`WORD_SIZE-1:0] i__data;
@@ -30,7 +30,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     inout reg [`QWORD_SIZE-1:0] m__data;
     reg [`QWORD_SIZE-1:0] m__data_out;
     input m__ready;
-    input clk;
+    input clk, reset_n;
     
     reg is_hit;
     reg [2:0] c__state;
@@ -66,7 +66,9 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
 
     // Combinational Logic
     always @(*) begin
-        if ((c__read_m | c__write_m) & c__ready) begin
+        if(!reset_n) begin
+            c__state = `STATE_READY;
+        end else if ((c__read_m | c__write_m) & c__ready) begin
             if (c__state == `STATE_READY) begin
                 if (c__read_m)  c__state = `STATE_READ;
                 if (c__write_m) c__state = `STATE_WRITE;
@@ -79,7 +81,9 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
             is_hit = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) || (cache__valid[2 + idx] && cache__tag[2 + idx] == addr[`TAG]);
         end
 
-        if (c__state == `STATE_READY_PARALLEL) begin
+        if(!reset_n) begin
+            c__state = `STATE_READY;
+        end else if (c__state == `STATE_READY_PARALLEL) begin
             // Observe if memory write is finished
             if (m__ready) begin
                 m__write_m = 0;
@@ -102,7 +106,9 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
 
     // Sequential Logic
     always @(posedge clk) begin
-        if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL) begin
+        if(!reset_n) begin
+            c__state = `STATE_READY;
+        end else if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL) begin
             if(is_hit) begin // When cache hit occurs
                 // Data array access
                 if(cache__valid[idx]) begin

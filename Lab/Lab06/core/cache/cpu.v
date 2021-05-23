@@ -15,7 +15,7 @@
 `include "memory_io.v"
 
 
-module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack);
+module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, write_q2, address2, data2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack);
 
     input clk;
     input reset_n;
@@ -23,11 +23,13 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     output read_m1;
     output [`WORD_SIZE-1:0] address1;
     output read_m2;
-    output write_m2;
+    output write_m2, write_q2;
     output [`WORD_SIZE-1:0] address2;
 
     input [`WORD_SIZE-1:0] data1;
+    input [`QWORD_SIZE-1:0] qdata1;
     inout [`WORD_SIZE-1:0] data2;
+    inout [`QWORD_SIZE-1:0] qdata2;
 
     output [`WORD_SIZE-1:0] num_inst;
     output [`WORD_SIZE-1:0] output_port;
@@ -62,7 +64,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     wire w__d_cache__read_m, w__d_cache__write_m;
     wire [`WORD_SIZE-1:0] w__d_cache__addr;
-    wire [`WORD_SIZE-1:0] w__d_cache__data;
+    wire [`QWORD_SIZE-1:0] w__d_cache__data;
 
     // alu
     wire [2-1:0] c__forward_a;
@@ -351,7 +353,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .m__size(),
         .m__data(w__i_cache__data),
         .m__ready(m1_ready),
-        .clk(clk)
+        .clk(clk),
+        .reset_n(reset_n)
     );
 
     forwarding_unit Forwarding_BC_Unit(
@@ -521,12 +524,15 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     ////////////// MEM ////////////////
 
+    wire [`WORD_SIZE-1:0] size_m2;
     /// Memory ///
     memory_io Memory (
         .clk(clk),
         .reset_n(reset_n),
         .data1(data1),
         .data2(data2),
+        .qdata1(qdata1),
+        .qdata2(qdata2),
         .m1_ready(m1_ready),
         .m1_ack(m1_ack),
         .m2_ready(m2_ready),
@@ -539,11 +545,18 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .read_m1(read_m1),
         .read_m2(read_m2),
         .write_m2(write_m2),
+        .write_q2(write_q2),
+        .size_m2(size_m2),
         .address1(address1),
         .address2(address2),
         .res_inst(w__i_cache__data),
         .res_data(w__d_cache__data)
     );
+
+    assign data2 = (write_m2) ? w__d_cache__data[`WORD_SIZE-1:0] : `WORD_SIZE'bz;
+    assign qdata2 = (write_q2) ? w__d_cache__data : `QWORD_SIZE'bz; 
+    assign w__m1_ready = m1_ready;
+    assign w__m2_ready = m2_ready;
 
     cache d_cache(
         .c__read_m(rc__ex_mem__valid & rc__ex_mem__mem_read),
@@ -555,10 +568,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .m__read_m(w__d_cache__read_m),
         .m__write_m(w__d_cache__write_m),
         .m__addr(w__d_cache__addr),
-        .m__size(),
+        .m__size(size_m2),
         .m__data(w__d_cache__data),
         .m__ready(m2_ready),
-        .clk(clk)
+        .clk(clk),
+        .reset_n(reset_n)
     );
 
 

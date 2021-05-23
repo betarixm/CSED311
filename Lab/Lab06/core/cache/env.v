@@ -11,6 +11,7 @@
 `define RD 7:6
 `define FUNC 5:0
 
+`define  QWORD_SIZE   64
 `define   WORD_SIZE   16
 `define   ADDR_SIZE   12
 `define   IMMD_SIZE    8

@@ -1,6 +1,7 @@
 `timescale 1ns/1ns
 `define PERIOD1 100
 `define WORD_SIZE 16
+`define QWORD_SIZE 64
 
 `define NUM_TEST 56
 `define TESTID_SIZE 5
@@ -12,10 +13,12 @@ module cpu_TB();
 	wire read_m1;
 	wire [`WORD_SIZE-1:0] address1;
 	wire [`WORD_SIZE-1:0] data1;
+	wire [`QWORD_SIZE-1:0] qdata1;
 	wire read_m2;
-	wire write_m2;
+	wire write_m2, write_q2;
 	wire [`WORD_SIZE-1:0] address2;
 	wire [`WORD_SIZE-1:0] data2;
+	wire [`QWORD_SIZE-1:0] qdata2;
 
 	// for debuging purpose
 	wire [`WORD_SIZE-1:0] num_inst;		// number of instruction during execution
@@ -25,8 +28,8 @@ module cpu_TB();
 	wire m1_ready, m1_ack, m2_ready, m2_ack;
 
 	// instantiate the unit under test
-	cpu UUT (clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack);
-	Memory NUUT(!clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, m1_ready, m1_ack, m2_ready, m2_ack);
+	cpu UUT (clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, write_q2, address2, data2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack);
+	Memory NUUT(!clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, write_q2, address2, data2, qdata2, m1_ready, m1_ack, m2_ready, m2_ack);
 
 	// initialize inputs
 	initial begin
