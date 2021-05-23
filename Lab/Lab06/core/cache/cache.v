@@ -35,10 +35,10 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     reg is_hit;
     reg [2:0] c__state;
 
-    reg                   cache__valid[4];
-    reg                   cache__lru[4];
-    reg [12:0]            cache__tag[4];
-    reg [`QWORD_SIZE-1:0] cache__data[4];
+    reg                   cache__valid[3:0];
+    reg                   cache__lru[3:0];
+    reg [12:0]            cache__tag[3:0];
+    reg [`QWORD_SIZE-1:0] cache__data[3:0];
     
     wire idx;
     assign idx = addr[`IDX];
