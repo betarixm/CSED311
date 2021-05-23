@@ -660,7 +660,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
             rc__id_ex__reg_write_dest <= c__reg_write_dest;
 
 
-            if (w__m1_ready == 0) begin    // memory port 1 not ready, waiting for fetch
+            if (w__m1_ready == 0 | first) begin    // memory port 1 not ready, waiting for fetch
+                first <= 0;
                 rc__if_id__valid <= 1'b0;
                 r__if_id__inst <= `NOP;
             end
