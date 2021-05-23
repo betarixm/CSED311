@@ -57,33 +57,34 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     // Combinational Logic
     always @(*) begin
         if ((c__read_m | c__write_m) & c__ready) begin
-            if (c__state == `STATE_READY_PARALLEL) begin
-                if (c__read_m)  c__state = `STATE_READ_PARALLEL;
-            end
-            else begin
+            if (c__state == `STATE_READY) begin
                 if (c__read_m)  c__state = `STATE_READ;
                 if (c__write_m) c__state = `STATE_WRITE;
+            end else if (c__state == `STATE_READY_PARALLEL) begin
+                if (c__read_m)  c__state = `STATE_READ_PARALLEL;
+                if (c__write_m) c__state = `STATE_WRITE_PARALLEL;
             end
 
             // Tag array access
-            is_hit = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG]))
-                    || (cache__valid[2 + idx] && cache__tag[2 + idx] == addr[`TAG]);
-        end 
+            is_hit = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) || (cache__valid[2 + idx] && cache__tag[2 + idx] == addr[`TAG]);
+        end
 
-        if (c__state == `STATE_READY_PARALLEL)
-        begin
+        if (c__state == `STATE_READY_PARALLEL) begin
             // Observe if memory write is finished
             if (m__ready) begin
                 m__write_m = 0;
                 c__state = `STATE_READY;
             end
-        end
-        else if (c__state == `STATE_READ_PARALLEL)
-        begin
+        end else if (c__state == `STATE_READ_PARALLEL) begin
             // Observe if memory write is finished
             if (m__ready) begin
                 m__write_m = 0;
                 c__state = `STATE_READ;
+            end
+        end else if (c__state == `STATE_WRITE_PARALLEL) begin
+            if (m__ready) begin
+                m__write_m = 0;
+                c__state = `STATE_WRITE;
             end
         end
     end
