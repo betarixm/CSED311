@@ -669,7 +669,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
             rc__id_ex__reg_write_dest <= c__reg_write_dest;
 
 
-            if (w__ready_inst == 0 | first) begin    // memory instruction port not ready, waiting for fetch
+            if (w__ready_inst == 0 || first) begin    // memory instruction port not ready, waiting for fetch
                 first <= 0;
                 rc__if_id__valid <= 1'b0;
                 r__if_id__inst <= `NOP;
@@ -712,8 +712,13 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
     always @(*) begin
         if (r__if_id__inst !== `NOP && !haz) begin
             if (r__is_flush) begin
-                rc__if_id__valid <= 1'b0;
-                r__if_id__inst <= `NOP;
+                rc__if_id__valid = 1'b0;
+                r__if_id__inst = `NOP;
+            end
+            else if (~w__ready_inst) begin
+                rc__if_id__valid = 1'b0;
+                r__if_id__inst = `NOP;
+                r__pc = r__if_id__pc;                
             end
             else begin
                 r__if_id__inst = w__inst;

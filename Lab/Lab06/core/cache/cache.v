@@ -162,7 +162,6 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                     // Data array access
                     if(cache__valid[idx] && (cache__tag[idx] == addr[`TAG])      ) begin
                         // Set 0
-		                $display("cache_data [%d][offset: %d] : %h", idx, addr[`OFF], cache__data[idx]);
                         case(addr[`OFF])
                             0: o__data <= cache__data[  idx  ][`WORD_SIZE*1-1 : `WORD_SIZE*0];
                             1: o__data <= cache__data[  idx  ][`WORD_SIZE*2-1 : `WORD_SIZE*1];
@@ -173,7 +172,6 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                         cache__lru[idx] <= 0;
                         cache__lru[~idx] <= 1;
                     end else begin
-		                $display("cache_data [%d][offset: %d] : %h", idx, addr[`OFF], cache__data[idx+2]);
                         // Set 1
                         case(addr[`OFF])
                             0: o__data <= cache__data[2 + idx][`WORD_SIZE*1-1 : `WORD_SIZE*0];
