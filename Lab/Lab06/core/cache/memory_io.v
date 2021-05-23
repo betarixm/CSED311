@@ -5,7 +5,7 @@
 `define INST 0
 `define DATA 1
 
-module memory_io(clk, reset_n, data1, qdata1, data2, qdata2, m1_ready, m1_ack, m2_ready, m2_ack, read_inst, read_data, write_data, addr_inst, addr_data, read_m1, read_m2, write_m2, write_q2, size_m2, address1, address2, res_inst, res_data);
+module memory_io(clk, reset_n, data1, qdata1, data2, qdata2, m1_ready, m1_ack, m2_ready, m2_ack, read_inst, read_data, write_data, addr_inst, addr_data, read_m1, read_m2, write_m2, write_q2, size_m2, address1, address2, res_inst, res_data, ready_inst, ack_inst, ready_data, ack_data);
     input clk;
     input reset_n;
 
@@ -24,6 +24,7 @@ module memory_io(clk, reset_n, data1, qdata1, data2, qdata2, m1_ready, m1_ack, m
     output reg [`WORD_SIZE-1:0] address1, address2;
 
     output reg [`QWORD_SIZE-1:0] res_inst, res_data;
+    output ready_inst, ack_inst, ready_data, ack_data;
 
     
     initial begin
@@ -45,6 +46,13 @@ module memory_io(clk, reset_n, data1, qdata1, data2, qdata2, m1_ready, m1_ack, m
 
     assign address1 = (m1_type == `INST) ? addr_inst : addr_data;
     assign address2 = (m2_type == `DATA) ? addr_data : addr_inst;
+
+    assign ready_inst = (m1_type == `INST) ? m1_ready : m2_ready;
+    assign ready_data = (m1_type == `DATA) ? m1_ready : m2_ready;
+
+    assign ack_inst = (m1_type == `INST) ? m1_ack : m2_ack;
+    assign ack_data = (m1_type == `DATA) ? m1_ack : m2_ack;
+
 
     reg cnt;
 

@@ -77,6 +77,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
     //## MEM/IF
 
     //## IF/ID
+    wire w__ready_inst, w__ack_inst;
     wire w__m1_ready;
     wire [`WORD_SIZE-1:0] w__inst;
     wire [`WORD_SIZE-1:0] w__bc_forward_a, w__bc_forward_b;
@@ -104,6 +105,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
     wire [`WORD_SIZE-1:0] w__alu_out;
 
     //## MEM/WB
+    wire w__ready_data, w__ack_data;
     wire w__m2_ready;
     wire [`WORD_SIZE-1:0] w__write_data;
 
@@ -352,8 +354,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .m__addr(w__i_cache__addr),
         .m__size(),
         .m__data(w__i_cache__data),
-        .m__ready(m1_ready),
-        .m__ack(m1_ack),
+        .m__ready(w__ready_inst),
+        .m__ack(w__ack_inst),
         .clk(clk),
         .reset_n(reset_n)
     );
@@ -551,7 +553,11 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .address1(address1),
         .address2(address2),
         .res_inst(w__i_cache__data),
-        .res_data(w__d_cache__data)
+        .res_data(w__d_cache__data),
+        .ready_inst(w__ready_inst),
+        .ack_inst(w__ack_inst),
+        .ready_data(w__ready_data),
+        .ack_data(w__ack_data)
     );
 
     assign data2 = (write_m2) ? w__d_cache__data[`WORD_SIZE-1:0] : `WORD_SIZE'bz;
@@ -571,8 +577,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .m__addr(w__d_cache__addr),
         .m__size(size_m2),
         .m__data(w__d_cache__data),
-        .m__ready(m2_ready),
-        .m__ack(m2_ack),
+        .m__ready(w__ready_data),
+        .m__ack(w__ack_data),
         .clk(clk),
         .reset_n(reset_n)
     );
