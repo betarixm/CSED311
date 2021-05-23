@@ -15,6 +15,7 @@
 `define STATE_MEM_WR  3'd4
 `define STATE_READY_OBSERVE_MEM 3'd5
 `define STATE_READ_OBSERVE_MEM  3'd6
+`define STATE_WRITE_OBSERVE_MEM 3'd7
 
 
 module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m, m__write_m, m__addr, m__size, m__data, m__ready, clk);
@@ -32,7 +33,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     input clk;
     
     reg is_hit;
-    reg [`WORD_SIZE-1:0] c__state;
+    reg [2:0] c__state;
 
     reg                   cache__valid[4];
     reg                   cache__lru[4];
