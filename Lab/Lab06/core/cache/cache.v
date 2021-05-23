@@ -72,7 +72,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
 
     // Combinational Logic
     always @(*) begin
-        if ((c__read_m | c__write_m) & c__ready) begin
+        if ((c__read_m | c__write_m) & c__ready & ~m__ack) begin
             if (c__state == `STATE_READY) begin
                 if (c__read_m)  c__state = `STATE_READ;
                 if (c__write_m) c__state = `STATE_WRITE;
@@ -160,7 +160,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
             if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL) begin
                 if(is_hit) begin // When cache hit occurs
                     // Data array access
-                    if(cache__valid[idx] && (cache__tag[idx] == addr[`TAG])      ) begin
+                    if(cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) begin
                         // Set 0
                         case(addr[`OFF])
                             0: o__data <= cache__data[  idx  ][`WORD_SIZE*1-1 : `WORD_SIZE*0];

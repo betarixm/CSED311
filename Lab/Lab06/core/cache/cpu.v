@@ -613,7 +613,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         rc__mem_wb__valid <= rc__ex_mem__valid;
         rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
 
-        if (w__ready_data == 0) begin
+        if (w__d_cache_ready == 0) begin
             rc__mem_wb__reg_write <= 1'b0;
             rc__mem_wb__valid <= 1'b0;
         end else begin
