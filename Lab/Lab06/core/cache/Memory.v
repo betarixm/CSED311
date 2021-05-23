@@ -264,8 +264,19 @@ module Memory(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2,
                 if(read_m1) begin
                     if(timer_m1_ready == `IDLE) begin
                         timer_m1_ready  <=  6-2;
-                        data1 <= ((write_m2|write_q2) & address1==address2)?data2:memory[address1];
-                        qdata1 <= ((write_m2|write_q2) & address1==address2)?qdata2:{memory[address1+3], memory[address1+2], memory[address1+1], memory[address1]};
+                        if (write_m2)
+                            if (address2==address1+0)
+                                qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], data2};
+                            else if (address2==address1+1)
+                                qdata1 <= {memory[address1+3], memory[address1+2], data2, memory[address1+0]};
+                            else if (address2==address1+0)
+                                qdata1 <= {memory[address1+3], data2, memory[address1+1], memory[address1+0]};
+                            else if (address2==address1+0)
+                                qdata1 <= {data2, memory[address1+2], memory[address1+1], memory[address1+0]};
+                            else
+                                qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
+                        else if (write_q2)
+                            qdata1 <= (address1==address2)?qdata2:{memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
                         m1_ack <= 0;
                     end else if(timer_m1_ready > 0) begin
                         timer_m1_ready  <=  timer_m1_ready  - 1;
@@ -281,8 +292,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2,
                 if(read_m2) begin
                     if(timer_m2_ready == `IDLE) begin
                         timer_m2_ready  <=  6-2;
-                        output_data2 <= memory[address2];
-                        output_qdata2 <= {memory[address2 + 3], memory[address2 + 2], memory[address2 + 1], memory[address2]};
+                        output_qdata2 <= {memory[address2 + 3], memory[address2 + 2], memory[address2 + 1], memory[address2+0]};
                         m2_ack <= 0;
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
