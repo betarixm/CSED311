@@ -4,9 +4,9 @@
 `define QWORD_SIZE 64
 `define W_Q_EXTEND 48
 
-`define TAG 15:4
-`define IDX 3
-`define OFF 2:1
+`define TAG 15:3
+`define IDX 2
+`define OFF 1:0
 
 `define STATE_READY   3'd0
 `define STATE_READ    3'd1
