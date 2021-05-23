@@ -78,7 +78,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
 
     //## IF/ID
     wire w__ready_inst, w__ack_inst;
-    wire w__m1_ready;
+    wire w__i_cache_ready;
     wire [`WORD_SIZE-1:0] w__inst;
     wire [`WORD_SIZE-1:0] w__bc_forward_a, w__bc_forward_b;
 
@@ -106,7 +106,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
 
     //## MEM/WB
     wire w__ready_data, w__ack_data;
-    wire w__m2_ready;
+    wire w__d_cache_ready;
     wire [`WORD_SIZE-1:0] w__write_data;
 
     //# Registers
@@ -348,7 +348,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .addr(r__pc),
         .i__data(),
         .o__data(w__inst),
-        .c__ready(w__m1_ready),
+        .c__ready(w__i_cache_ready),
         .m__read_m(w__i_cache__read_m),
         .m__write_m(),
         .m__addr(w__i_cache__addr),
@@ -562,8 +562,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
 
     assign data2 = (write_m2) ? w__d_cache__data[`WORD_SIZE-1:0] : `WORD_SIZE'bz;
     assign qdata2 = (write_q2) ? w__d_cache__data : `QWORD_SIZE'bz; 
-    assign w__m1_ready = m1_ready;
-    assign w__m2_ready = m2_ready;
 
     cache d_cache(
         .c__read_m(rc__ex_mem__valid & rc__ex_mem__mem_read),
@@ -571,7 +569,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .addr(r__ex_mem__alu_out),
         .i__data(r__ex_mem__read_data_2),
         .o__data(w__data),
-        .c__ready(w__m2_ready),
+        .c__ready(w__d_cache_ready),
         .m__read_m(w__d_cache__read_m),
         .m__write_m(w__d_cache__write_m),
         .m__addr(w__d_cache__addr),
@@ -613,7 +611,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         rc__mem_wb__valid <= rc__ex_mem__valid;
         rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
 
-        if (w__m2_ready == 0) begin
+        if (w__ready_data == 0) begin
             rc__mem_wb__reg_write <= 1'b0;
             rc__mem_wb__valid <= 1'b0;
         end else begin
@@ -669,7 +667,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
             rc__id_ex__reg_write_dest <= c__reg_write_dest;
 
 
-            if (w__m1_ready == 0 | first) begin    // memory port 1 not ready, waiting for fetch
+            if (w__ready_inst == 0 | first) begin    // memory instruction port not ready, waiting for fetch
                 first <= 0;
                 rc__if_id__valid <= 1'b0;
                 r__if_id__inst <= `NOP;
@@ -695,7 +693,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
                     end
                 end
 
-            end  // end not m1_ready
+            end  // end not i cache ready
 
             if (r__new_inst) begin
                 r__new_inst <= 1'b0;
@@ -706,7 +704,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
                 end
             end
 
-        end  // end not m2_ready
+        end  // end not data cache ready
     end // end always posedge clk
 
 endmodule
