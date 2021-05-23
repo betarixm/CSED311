@@ -39,11 +39,21 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     reg                   cache__lru[3:0];
     reg [12:0]            cache__tag[3:0];
     reg [`QWORD_SIZE-1:0] cache__data[3:0];
-    
+
+    wire [`WORD_SIZE-1:0] data_0;
+    wire [`WORD_SIZE-1:0] data_1;
+    wire [`WORD_SIZE-1:0] data_2;
+    wire [`WORD_SIZE-1:0] data_3;
+
     wire idx;
     assign idx = addr[`IDX];
     assign c__ready = (c__state == `STATE_READY || c__state == `STATE_READY_PARALLEL);
-    assign m__data = (c__state == `STATE_WRITE) ? m__data_out : `QWORD_SIZE'bz
+    assign m__data = (c__state == `STATE_WRITE) ? m__data_out : `QWORD_SIZE'bz;
+
+    assign data_0 = (cache__valid[idx]) ? cache__data[idx][`WORD_SIZE * 1 - 1:`WORD_SIZE * 0] : cache__data[idx + 2][`WORD_SIZE * 1 - 1:`WORD_SIZE * 0];
+    assign data_1 = (cache__valid[idx]) ? cache__data[idx][`WORD_SIZE * 2 - 1:`WORD_SIZE * 1] : cache__data[idx + 2][`WORD_SIZE * 2 - 1:`WORD_SIZE * 1];
+    assign data_2 = (cache__valid[idx]) ? cache__data[idx][`WORD_SIZE * 3 - 1:`WORD_SIZE * 2] : cache__data[idx + 2][`WORD_SIZE * 3 - 1:`WORD_SIZE * 2];
+    assign data_3 = (cache__valid[idx]) ? cache__data[idx][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3] : cache__data[idx + 2][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3];
 
     initial begin
         cache__lru[0] = 0; 
@@ -97,20 +107,20 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                 // Data array access
                 if(cache__valid[idx]) begin
                     // Set 0
-                    o__data <= cache__data[  idx  ][`WORD_SIZE*(addr[`OFF] + 1) - 1 : `WORD_SIZE*addr[`OFF]];
+                    o__data <= cache__data[  idx  ][`WORD_SIZE*addr[`OFF] +: `WORD_SIZE];
                     // Update LRU bit
                     cache__lru[idx] <= 0;
                     cache__lru[~idx] <= 1;
                 end else begin
                     // Set 1
-                    o__data <= cache__data[2 + idx][`WORD_SIZE*(addr[`OFF] + 1) - 1 : `WORD_SIZE*addr[`OFF]];
+                    o__data <= cache__data[2 + idx][`WORD_SIZE*addr[`OFF] +: `WORD_SIZE];
                     // Update LRU bit
                     cache__lru[2 + idx] <= 0;
                     cache__lru[2 + (~idx)] <= 1;
                 end
                 // Cache access 
                 if (c__state == `STATE_READ) c__state <= `STATE_READY;
-                if (c__State == `STATE_READ_PARALLEL) c__state <= `STATE_READY_PARALLEL;
+                if (c__state == `STATE_READ_PARALLEL) c__state <= `STATE_READY_PARALLEL;
             end else begin // When cache miss occurs
                 if(c__state == `STATE_READ) begin
                     // Prepare for reading new data
@@ -126,14 +136,14 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
         else if (c__state == `STATE_MEM_RD) begin
             // Wait for finishing memory read
             if (m__ready) begin
-                o__data <= m__data[`WORD_SIZE*(addr[`OFF] + 1) - 1 : `WORD_SIZE*addr[`OFF]];
+                o__data <= m__data[`WORD_SIZE*addr[`OFF] +: `WORD_SIZE];
                 // Replace invalid or LRU data with new data from memory
                 if (cache__valid[idx] == 0 || (cache__valid[2+idx] == 1 && cache__lru[idx] == 1)) begin
                     // Update cache
                     cache__valid[idx] <= 1;
                     cache__lru[idx]   <= 0;
                     cache__lru[~idx]  <= 1;
-                    cache__tag[idx]   <= addr[tag];
+                    cache__tag[idx]   <= addr[`TAG];
                     cache__data[idx]  <= m__data;
                 end 
                 else begin
@@ -141,7 +151,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                     cache__valid[2 + idx]  <= 1;
                     cache__lru[2 + idx]    <= 0;
                     cache__lru[2 + (~idx)] <= 1;
-                    cache__tag[2 + idx]    <= addr[tag];
+                    cache__tag[2 + idx]    <= addr[`TAG];
                     cache__data[2 + idx]   <= m__data;
                 end
                 m__read_m <= 0;
@@ -159,15 +169,38 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                 m__size <= `QWORD_SIZE;
                 // Data array access
                 if(cache__valid[idx]) begin
-                    m__data_out <= {cache__data[idx][`QWORD_SIZE-1 : `WORD_SIZE*(addr[`OFF] + 1)]
-                                    , i__data
-                                    , cache__data[idx][`WORD_SIZE*addr[`OFF]-1 : 0]};
+                    case(addr[`OFF])
+                        0: begin
+                            m__data_out <= {data_3, data_2, data_1, i__data};
+                        end
+                        1: begin
+                            m__data_out <= {data_3, data_2, i__data, data_0};
+                        end
+                        2: begin
+                            m__data_out <= {data_3, i__data, data_1, data_0};
+                        end
+                        3: begin
+                            m__data_out <= {i__data, data_2, data_1, data_0};
+                        end
+                    endcase
+
                     // Update Cache
                     cache__valid[idx] <= 0;
                 end else begin
-                    m__data_out <= {cache__data[2 + idx][`QWORD_SIZE-1 : `WORD_SIZE*(addr[`OFF] + 1)]
-                                    , i__data
-                                    , cache__data[2 + idx][`WORD_SIZE*addr[`OFF]-1 : 0]};
+                    case(addr[`OFF])
+                        0: begin
+                            m__data_out <= {data_3, data_2, data_1, i__data};
+                        end
+                        1: begin
+                            m__data_out <= {data_3, data_2, i__data, data_0};
+                        end
+                        2: begin
+                            m__data_out <= {data_3, i__data, data_1, data_0};
+                        end
+                        3: begin
+                            m__data_out <= {i__data, data_2, data_1, data_0};
+                        end
+                    endcase
                     // Update Cache
                     cache__valid[2 + idx] <= 0;
                 end

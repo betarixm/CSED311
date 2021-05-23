@@ -33,8 +33,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     output [`WORD_SIZE-1:0] output_port;
     output is_halted;
 
-    input m1_ready;
-    input m2_ready;
+    input m1_ready, m1_ack;
+    input m2_ready, m2_ack;
 
     ///////////////////////////////////////////////////
 
