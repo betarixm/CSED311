@@ -335,13 +335,13 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         .addr(r__pc),
         .i__data(),
         .o__data(w__inst),
-        .c__ready(),
+        .c__ready(w__m1_ready),
         .m__read_m(),
         .m__write_m(),
         .m__addr(),
         .m__size(),
         .m__data(),
-        .m__ready(w__m1_ready),
+        .m__ready(),
         .clk(clk)
     );
 
