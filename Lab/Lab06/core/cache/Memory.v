@@ -277,6 +277,8 @@ module Memory(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2,
                                 qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
                         else if (write_q2)
                             qdata1 <= (address1==address2)?qdata2:{memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
+                        else
+                            qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
                         m1_ack <= 0;
                     end else if(timer_m1_ready > 0) begin
                         timer_m1_ready  <=  timer_m1_ready  - 1;
