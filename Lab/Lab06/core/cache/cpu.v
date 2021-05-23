@@ -353,6 +353,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .m__size(),
         .m__data(w__i_cache__data),
         .m__ready(m1_ready),
+        .m__ack(m1_ack),
         .clk(clk),
         .reset_n(reset_n)
     );
@@ -571,6 +572,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .m__size(size_m2),
         .m__data(w__d_cache__data),
         .m__ready(m2_ready),
+        .m__ack(m2_ack),
         .clk(clk),
         .reset_n(reset_n)
     );
@@ -607,6 +609,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
 
         if (w__m2_ready == 0) begin
             rc__mem_wb__reg_write <= 1'b0;
+            rc__mem_wb__valid <= 1'b0;
         end else begin
             // - EX/MEM
             if (rc__ex_mem__valid == 1'b1) begin
