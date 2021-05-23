@@ -249,7 +249,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
             begin
                 if(read_m1) begin
                     if(timer_m1_ready == 0) begin
-                        timer_m1_ready  <=  4-1;
+                        timer_m1_ready  <=  2-1;
                         data1 <= (write_m2 & address1==address2)?data2:memory[address1];
                     end else if(timer_m1_ready > 0) begin
                         timer_m1_ready  <=  timer_m1_ready  - 1;
@@ -257,7 +257,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
                 end
                 if(read_m2) begin
                     if(timer_m2_ready == 0) begin
-                        timer_m2_ready  <=  4-1;
+                        timer_m2_ready  <=  2-1;
                         output_data2 <= memory[address2];
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
@@ -265,7 +265,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
                 end
                 else if(write_m2) begin
                     if(timer_m2_ready == 0) begin
-                        timer_m2_ready  <=  4-1;
+                        timer_m2_ready  <=  2-1;
                         memory[address2] <= data2;
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
