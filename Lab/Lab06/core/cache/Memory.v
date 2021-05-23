@@ -2,10 +2,11 @@
 `define PERIOD1 100
 `define MEMORY_SIZE 256	//	size of memory is 2^8 words (reduced size)
 `define WORD_SIZE 16	//	instead of 2^16 words to reduce memory
-`define QWORD_SIZE 64
             //	requirements in the Active-HDL simulator 
 
-module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, m1_ready, m2_ready);
+`define IDLE 4'd1111
+
+module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, m1_ready, m1_ack, m2_ready, m2_ack);
     input clk;
     wire clk;
     input reset_n;
@@ -16,7 +17,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     input [`WORD_SIZE-1:0] address1;
     wire [`WORD_SIZE-1:0] address1;
     output data1;
-    reg [`QWORD_SIZE-1:0] data1;
+    reg [`WORD_SIZE-1:0] data1;
     
     input read_m2;
     wire read_m2;
@@ -25,26 +26,30 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     input [`WORD_SIZE-1:0] address2;
     wire [`WORD_SIZE-1:0] address2;
     inout data2;
-    wire [`QWORD_SIZE-1:0] data2;
+    wire [`WORD_SIZE-1:0] data2;
 
     reg [4-1:0] timer_m1_ready;
     output m1_ready;
+    output reg m1_ack;
     reg [4-1:0] timer_m2_ready;
     output m2_ready;
+    output reg m2_ack;
     
     reg [`WORD_SIZE-1:0] memory [0:`MEMORY_SIZE-1];
-    reg [`QWORD_SIZE-1:0] output_data2;
+    reg [`WORD_SIZE-1:0] output_data2;
     
-    assign data2 = read_m2?output_data2:`QWORD_SIZE'bz;
+    assign data2 = read_m2?output_data2:`WORD_SIZE'bz;
 
-    assign m1_ready = (timer_m1_ready == 0);
-    assign m2_ready = (timer_m2_ready == 0);
+    assign m1_ready = (timer_m1_ready == `IDLE);
+    assign m2_ready = (timer_m2_ready == `IDLE);
 
     always@(posedge clk)
         if(!reset_n)
             begin
-                timer_m1_ready <= 0;
-                timer_m2_ready <= 0;
+                timer_m1_ready <= `IDLE;
+                m1_ack <= 0;
+                timer_m2_ready <= `IDLE;
+                m2_ack <= 0;
 
                 memory[16'h0] <= 16'h9023;
                 memory[16'h1] <= 16'h1;
@@ -249,28 +254,47 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
         else
             begin
                 if(read_m1) begin
-                    if(timer_m1_ready == 0) begin
-                        timer_m1_ready  <=  6-1;
+                    if(timer_m1_ready == `IDLE) begin
+                        timer_m1_ready  <=  4-2;
                         data1 <= (write_m2 & address1==address2)?data2:memory[address1];
+                        m1_ack <= 0;
                     end else if(timer_m1_ready > 0) begin
                         timer_m1_ready  <=  timer_m1_ready  - 1;
+                        m1_ack <= 0;
+                    end else if(timer_m1_ready == 0) begin
+                        timer_m1_ready  <=  `IDLE;
+                        m1_ack <= 1;
                     end
                 end
+                else begin
+                    m1_ack <= 0;
+                end
                 if(read_m2) begin
-                    if(timer_m2_ready == 0) begin
-                        timer_m2_ready  <=  6-1;
+                    if(timer_m2_ready == `IDLE) begin
+                        timer_m2_ready  <=  4-2;
                         output_data2 <= memory[address2];
+                        m2_ack <= 0;
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
+                        m2_ack <= 0;
+                    end else if(timer_m2_ready == 0) begin
+                        timer_m2_ready  <=  `IDLE;
+                        m2_ack <= 1;
                     end
                 end
                 else if(write_m2) begin
-                    if(timer_m2_ready == 0) begin
-                        timer_m2_ready  <=  6-1;
+                    m2_ack <= 0;
+                    if(timer_m2_ready == `IDLE) begin
+                        timer_m2_ready  <=  4-2;
                         memory[address2] <= data2;
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
+                    end else if(timer_m2_ready == 0) begin
+                        timer_m2_ready  <=  `IDLE;
                     end
+                end
+                else begin
+                    m2_ack <= 0;
                 end
             end
 endmodule
