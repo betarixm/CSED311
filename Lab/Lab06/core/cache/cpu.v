@@ -11,6 +11,7 @@
 `include "branch_predictor.v"
 `include "hazard.v"
 `include "forwarding_unit.v"
+`include "cache.v"
 
 
 module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, num_inst, output_port, is_halted, m1_ready, m2_ready);
@@ -327,6 +328,22 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
 
     ////////// ID ///////////
+
+    cache i_cache(
+        .c__read_m(r__fetch),
+        .c__write_m(),
+        .addr(r__pc),
+        .i__data(),
+        .o__data(w__inst),
+        .c__ready(),
+        .m__read_m(),
+        .m__write_m(),
+        .m__addr(),
+        .m__size(),
+        .m__data(),
+        .m__ready(w__m1_ready),
+        .clk(clk)
+    );
 
     forwarding_unit Forwarding_BC_Unit(
         .EXMEM_RegWrite(rc__id_ex__reg_write),
