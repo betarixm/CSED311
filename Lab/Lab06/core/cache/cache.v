@@ -13,9 +13,9 @@
 `define STATE_WRITE   3'd2
 `define STATE_MEM_RD  3'd3
 `define STATE_MEM_WR  3'd4
-`define STATE_READY_OBSERVE_MEM 3'd5
-`define STATE_READ_OBSERVE_MEM  3'd6
-`define STATE_WRITE_OBSERVE_MEM 3'd7
+`define STATE_READY_PARALLEL 3'd5
+`define STATE_READ_PARALLEL  3'd6
+`define STATE_WRITE_PARALLEL 3'd7
 
 
 module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m, m__write_m, m__addr, m__size, m__data, m__ready, clk);
@@ -42,7 +42,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     
     wire idx;
     assign idx = addr[`IDX];
-    assign c__ready = (c__state == `STATE_READY || c__state == `STATE_READY_OBSERVE_MEM);
+    assign c__ready = (c__state == `STATE_READY || c__state == `STATE_READY_PARALLEL);
     assign m__data = (c__state == `STATE_WRITE) ? m__data_out : `QWORD_SIZE'bz
 
     initial begin
@@ -57,8 +57,8 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     // Combinational Logic
     always @(*) begin
         if ((c__read_m | c__write_m) & c__ready) begin
-            if (c__state == `STATE_READY_OBSERVE_MEM) begin
-                if (c__read_m)  c__state = `STATE_READ_OBSERVE_MEM;
+            if (c__state == `STATE_READY_PARALLEL) begin
+                if (c__read_m)  c__state = `STATE_READ_PARALLEL;
             end
             else begin
                 if (c__read_m)  c__state = `STATE_READ;
@@ -70,7 +70,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                     || (cache__valid[2 + idx] && cache__tag[2 + idx] == addr[`TAG]);
         end 
 
-        if (c__state == `STATE_READY_OBSERVE_MEM)
+        if (c__state == `STATE_READY_PARALLEL)
         begin
             // Observe if memory write is finished
             if (m__ready) begin
@@ -78,7 +78,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                 c__state = `STATE_READY;
             end
         end
-        else if (c__state == `STATE_READ_OBSERVE_MEM)
+        else if (c__state == `STATE_READ_PARALLEL)
         begin
             // Observe if memory write is finished
             if (m__ready) begin
@@ -91,7 +91,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
 
     // Sequential Logic
     always @(posedge clk) begin
-        if (c__state == `STATE_READ || c__state == `STATE_READ_OBSERVE_MEM)
+        if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL)
         begin
             if (is_hit) begin // When cache hit occurs
                 // Data array access
@@ -167,7 +167,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                     cache__valid[2 + idx] <= 0;
                 end
                 // Cache access ended
-                c__state <= `STATE_READY_OBSERVE_MEM;
+                c__state <= `STATE_READY_PARALLEL;
             end
             else begin // When cache miss occurs
                 // Write to memory (no allocate)
