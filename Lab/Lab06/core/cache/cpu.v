@@ -590,8 +590,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .o(w__write_data)
     );	
 
+    reg haz;
 
     always @(posedge clk) begin
+        haz <= c__hdu_is_stall;
         // update Pipeline Registers
         // - MEM/WB
         r__mem_wb__wwd_value <= r__ex_mem__wwd_value;
@@ -674,6 +676,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
             end
             else begin
                 r__new_inst <= 1'b1;
+                $display("instruction (%d) fetched. res : %h", r__pc, w__inst);
+                $display("flush? %d", r__is_flush);
                 if (r__is_flush) begin     // fetch done, but we'll flush that
                     r__is_flush <= 1'b0;
                     rc__if_id__valid <= 1'b0;
@@ -706,6 +710,20 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
 
         end  // end not data cache ready
     end // end always posedge clk
+
+    always @(*) begin
+        if (r__if_id__inst !== `NOP && !haz) begin
+            if (r__is_flush) begin
+                rc__if_id__valid <= 1'b0;
+                r__if_id__inst <= `NOP;
+            end
+            else begin
+                r__if_id__inst = w__inst;
+            end
+        end
+        if (w__data !== `WORD_SIZE'bX && w__data !== `WORD_SIZE'bZ)
+            r__mem_wb__memory_read_data = w__data;
+    end
 
 endmodule
 

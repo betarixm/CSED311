@@ -162,13 +162,24 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                     // Data array access
                     if(cache__valid[idx]) begin
                         // Set 0
-                        o__data <= cache__data[  idx  ][`WORD_SIZE*addr[`OFF] +: `WORD_SIZE];
+		                $display("cache_data [%d][offset: %d] : %h", idx, addr[`OFF], cache__data[idx]);
+                        case(addr[`OFF])
+                            0: o__data <= cache__data[  idx  ][`WORD_SIZE*1-1 : `WORD_SIZE*0];
+                            1: o__data <= cache__data[  idx  ][`WORD_SIZE*2-1 : `WORD_SIZE*1];
+                            2: o__data <= cache__data[  idx  ][`WORD_SIZE*3-1 : `WORD_SIZE*2];
+                            3: o__data <= cache__data[  idx  ][`WORD_SIZE*4-1 : `WORD_SIZE*3];
+                        endcase
                         // Update LRU bit
                         cache__lru[idx] <= 0;
                         cache__lru[~idx] <= 1;
                     end else begin
                         // Set 1
-                        o__data <= cache__data[2 + idx][`WORD_SIZE*addr[`OFF] +: `WORD_SIZE];
+                        case(addr[`OFF])
+                            0: o__data <= cache__data[2 + idx][`WORD_SIZE*1-1 : `WORD_SIZE*0];
+                            1: o__data <= cache__data[2 + idx][`WORD_SIZE*2-1 : `WORD_SIZE*1];
+                            2: o__data <= cache__data[2 + idx][`WORD_SIZE*3-1 : `WORD_SIZE*2];
+                            3: o__data <= cache__data[2 + idx][`WORD_SIZE*4-1 : `WORD_SIZE*3];
+                        endcase
                         // Update LRU bit
                         cache__lru[2 + idx] <= 0;
                         cache__lru[2 + (~idx)] <= 1;
