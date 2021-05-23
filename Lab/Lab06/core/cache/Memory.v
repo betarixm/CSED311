@@ -2,6 +2,7 @@
 `define PERIOD1 100
 `define MEMORY_SIZE 256	//	size of memory is 2^8 words (reduced size)
 `define WORD_SIZE 16	//	instead of 2^16 words to reduce memory
+`define QWORD_SIZE 64
             //	requirements in the Active-HDL simulator 
 
 module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, m1_ready, m2_ready);
@@ -15,7 +16,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     input [`WORD_SIZE-1:0] address1;
     wire [`WORD_SIZE-1:0] address1;
     output data1;
-    reg [`WORD_SIZE-1:0] data1;
+    reg [`QWORD_SIZE-1:0] data1;
     
     input read_m2;
     wire read_m2;
@@ -24,7 +25,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     input [`WORD_SIZE-1:0] address2;
     wire [`WORD_SIZE-1:0] address2;
     inout data2;
-    wire [`WORD_SIZE-1:0] data2;
+    wire [`QWORD_SIZE-1:0] data2;
 
     reg [4-1:0] timer_m1_ready;
     output m1_ready;
@@ -32,9 +33,9 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     output m2_ready;
     
     reg [`WORD_SIZE-1:0] memory [0:`MEMORY_SIZE-1];
-    reg [`WORD_SIZE-1:0] output_data2;
+    reg [`QWORD_SIZE-1:0] output_data2;
     
-    assign data2 = read_m2?output_data2:`WORD_SIZE'bz;
+    assign data2 = read_m2?output_data2:`QWORD_SIZE'bz;
 
     assign m1_ready = (timer_m1_ready == 0);
     assign m2_ready = (timer_m2_ready == 0);
@@ -249,7 +250,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
             begin
                 if(read_m1) begin
                     if(timer_m1_ready == 0) begin
-                        timer_m1_ready  <=  2-1;
+                        timer_m1_ready  <=  6-1;
                         data1 <= (write_m2 & address1==address2)?data2:memory[address1];
                     end else if(timer_m1_ready > 0) begin
                         timer_m1_ready  <=  timer_m1_ready  - 1;
@@ -257,7 +258,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
                 end
                 if(read_m2) begin
                     if(timer_m2_ready == 0) begin
-                        timer_m2_ready  <=  2-1;
+                        timer_m2_ready  <=  6-1;
                         output_data2 <= memory[address2];
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
@@ -265,7 +266,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
                 end
                 else if(write_m2) begin
                     if(timer_m2_ready == 0) begin
-                        timer_m2_ready  <=  2-1;
+                        timer_m2_ready  <=  6-1;
                         memory[address2] <= data2;
                     end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;

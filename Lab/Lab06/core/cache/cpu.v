@@ -1,5 +1,6 @@
 `timescale 1ns/1ns
 `define WORD_SIZE 16    // data and address word size
+`define QWORD_SIZE 64
 
 `include "env.v"
 `include "util.v"
@@ -23,8 +24,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     output write_m2;
     output [`WORD_SIZE-1:0] address2;
 
-    input [`WORD_SIZE-1:0] data1;
-    inout [`WORD_SIZE-1:0] data2;
+    input [`QWORD_SIZE-1:0] data1;
+    inout [`QWORD_SIZE-1:0] data2;
 
     output [`WORD_SIZE-1:0] num_inst;
     output [`WORD_SIZE-1:0] output_port;

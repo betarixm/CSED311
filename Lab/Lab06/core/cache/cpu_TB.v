@@ -1,6 +1,7 @@
 `timescale 1ns/1ns
 `define PERIOD1 100
 `define WORD_SIZE 16
+`define QWORD_SIZE 64
 
 `define NUM_TEST 56
 `define TESTID_SIZE 5
@@ -11,11 +12,11 @@ module cpu_TB();
 	
 	wire read_m1;
 	wire [`WORD_SIZE-1:0] address1;
-	wire [`WORD_SIZE-1:0] data1;
+	wire [`QWORD_SIZE-1:0] data1;
 	wire read_m2;
 	wire write_m2;
 	wire [`WORD_SIZE-1:0] address2;
-	wire [`WORD_SIZE-1:0] data2;
+	wire [`QWORD_SIZE-1:0] data2;
 
 	// for debuging purpose
 	wire [`WORD_SIZE-1:0] num_inst;		// number of instruction during execution
