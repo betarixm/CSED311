@@ -26,9 +26,9 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     inout data2;
     wire [`WORD_SIZE-1:0] data2;
 
-    reg [3:0] timer_m1_ready;
+    reg [4-1:0] timer_m1_ready;
     output m1_ready;
-    reg [3:0] timer_m2_ready;
+    reg [4-1:0] timer_m2_ready;
     output m2_ready;
     
     reg [`WORD_SIZE-1:0] memory [0:`MEMORY_SIZE-1];
@@ -42,7 +42,7 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     always@(posedge clk)
         if(!reset_n)
             begin
-                timer_m1_ready <= 1;
+                timer_m1_ready <= 0;
                 timer_m2_ready <= 0;
 
                 memory[16'h0] <= 16'h9023;
@@ -249,25 +249,25 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
             begin
                 if(read_m1) begin
                     if(timer_m1_ready == 0) begin
+                        timer_m1_ready  <=  4-1;
                         data1 <= (write_m2 & address1==address2)?data2:memory[address1];
-                        timer_m1_ready  <=  2-1;
-                    end else begin
+                    end else if(timer_m1_ready > 0) begin
                         timer_m1_ready  <=  timer_m1_ready  - 1;
                     end
                 end
                 if(read_m2) begin
                     if(timer_m2_ready == 0) begin
+                        timer_m2_ready  <=  4-1;
                         output_data2 <= memory[address2];
-                        timer_m2_ready  <=  2-1;
-                    end else begin
+                    end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
                     end
                 end
                 else if(write_m2) begin
                     if(timer_m2_ready == 0) begin
+                        timer_m2_ready  <=  4-1;
                         memory[address2] <= data2;
-                        timer_m2_ready  <=  2-1;
-                    end else begin
+                    end else if(timer_m2_ready > 0) begin
                         timer_m2_ready  <=  timer_m2_ready - 1;
                     end
                 end

@@ -497,7 +497,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     /// Memory ///
     assign read_m1 = r__fetch;
     assign address1 = r__pc;
-    assign read_m2 = (rc__ex_mem__valid & rc__ex_mem__mem_read) | (rc__ex_mem__valid & rc__mem_wb__mem_read);
+    assign read_m2 = (rc__ex_mem__valid & rc__ex_mem__mem_read);
     assign write_m2 = rc__ex_mem__mem_write;
     assign address2 = r__ex_mem__alu_out;
     assign data2 = (rc__ex_mem__mem_write) ? r__ex_mem__read_data_2 : `WORD_SIZE'bz;
@@ -536,7 +536,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
         rc__mem_wb__valid <= rc__ex_mem__valid;
         rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
 
-        if (!w__m2_ready) begin
+        if (w__m2_ready == 0) begin
             rc__mem_wb__reg_write <= 1'b0;
         end else begin
             // - EX/MEM
@@ -589,72 +589,46 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             else
                 rc__id_ex__reg_write <= c__reg_write;
             rc__id_ex__reg_write_dest <= c__reg_write_dest;
-        
 
-            if (w__m1_ready == 0 | first) begin    // memory port 1 not ready, waiting for fetch
-                first <= 1'b0;
+
+            if (w__m1_ready == 0) begin    // memory port 1 not ready, waiting for fetch
                 rc__if_id__valid <= 1'b0;
                 r__if_id__inst <= `NOP;
-            end else if (r__is_flush) begin   // fetch done, but we'll flush that
-                r__is_flush <= 1'b0;
-                rc__if_id__valid <= 1'b0;
-                r__if_id__inst <= `NOP;
-            end else begin
-                rc__if_id__valid <= 1'b1;
-                // - IF/ID
-                if (!c__hdu_is_stall) begin
-                    r__if_id__inst <= w__inst;
-                    r__if_id__pc <= r__pc;
-                    r__if_id__pred_pc <= w__pred_pc;
-
-                    // Update flush
-                    if (c__is_branch) begin
-                        r__is_flush <= (r__if_id__pred_pc == w__branch_address) ? 1'b0 : 1'b1;
-                    end else if (c__is_jump) begin
-                        r__is_flush <= 1'b1;
-                    end else begin
-                        r__is_flush <= 1'b0;
+            end
+            else begin
+                r__new_inst <= 1'b1;
+                if (r__is_flush) begin     // fetch done, but we'll flush that
+                    r__is_flush <= 1'b0;
+                    rc__if_id__valid <= 1'b0;
+                    r__if_id__inst <= `NOP;
+                end else begin
+                    rc__if_id__valid <= 1'b1;
+                    if (!c__hdu_is_stall) begin
+                        r__if_id__inst <= w__inst;
+                        r__if_id__pc <= r__pc;
+                        r__if_id__pred_pc <= w__pred_pc;
+                        
+                        // Update PC
+                        r__pc <= w__pred_pc;
                     end
-                end
-                else begin
-                    rc__id_ex__valid <= 1'b0;
+                    else begin
+                        rc__id_ex__valid <= 1'b0;
+                    end
                 end
 
             end  // end not m1_ready
 
-            if (rc__if_id__valid | r__is_flush) begin
-                // Update PC
-                if (c__is_branch) begin
-                    r__pc <= (r__if_id__pred_pc == w__branch_address) ? w__pred_pc : w__branch_address;
-                end else if (c__is_jump) begin
+            if (r__new_inst) begin
+                r__new_inst <= 1'b0;
+                // Update PC for jump and branch, Update flush
+                if (c__is_jump || (c__is_branch && r__if_id__pred_pc != w__branch_address)) begin
                     r__pc <= w__branch_address;
-                end else begin
-                    r__pc <= w__pred_pc;
-                end
-
-                // Flush IF/ID when BP failed
-                if(c__is_jump || (c__is_branch && (r__if_id__pred_pc != w__branch_address))) begin
                     r__is_flush <= 1'b1;
-                end 
+                end
             end
 
         end  // end not m2_ready
     end // end always posedge clk
-
-    // always @(*) begin
-    //     if (!w__m1_ready) begin
-    //         rc__if_id__valid = 1'b0;
-    //         r__if_id__inst = `NOP;
-    //     end else begin
-    //         if ((r__if_id__inst !== `NOP && !haz) || !m1_ready) begin
-    //             rc__if_id__valid = 1'b1;
-    //             r__if_id__inst = w__inst;
-    //         end
-    //     end
-    //     if (w__data !== `WORD_SIZE'bX && w__data !== `WORD_SIZE'bZ)
-    //         r__mem_wb__memory_read_data = w__data;
-    // end
-
 
 endmodule
 
