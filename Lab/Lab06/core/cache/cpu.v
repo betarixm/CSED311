@@ -524,6 +524,22 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     assign w__m1_ready = m1_ready;
     assign w__m2_ready = m2_ready;
 
+    cache d_cache(
+        .c__read_m(rc__ex_mem__valid & rc__ex_mem__mem_read),
+        .c__write_m(rc__ex_mem__mem_write),
+        .addr(r__ex_mem__alu_out),
+        .i__data(r__ex_mem__read_data_2),
+        .o__data(w__data),
+        .c__ready(w__m2_ready),
+        .m__read_m(),
+        .m__write_m(),
+        .m__addr(),
+        .m__size(),
+        .m__data(),
+        .m__ready(),
+        .clk(clk)
+    );
+
 
     /////////////// WB ////////////////
     mux2_1 mux__alu_out__reg_memory(
