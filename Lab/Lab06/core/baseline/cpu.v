@@ -10,9 +10,10 @@
 `include "branch_predictor.v"
 `include "hazard.v"
 `include "forwarding_unit.v"
+`include "memory_io.v"
 
 
-module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, num_inst, output_port, is_halted, m1_ready, m2_ready);
+module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, data2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack);
 
     input clk;
     input reset_n;
@@ -31,7 +32,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     output is_halted;
 
     input m1_ready;
+    input m1_ack;
     input m2_ready;
+    input m2_ack;
 
     ///////////////////////////////////////////////////
 
@@ -495,14 +498,35 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     ////////////// MEM ////////////////
 
     /// Memory ///
-    assign read_m1 = r__fetch;
-    assign address1 = r__pc;
-    assign read_m2 = (rc__ex_mem__valid & rc__ex_mem__mem_read);
-    assign write_m2 = rc__ex_mem__mem_write;
-    assign address2 = r__ex_mem__alu_out;
-    assign data2 = (rc__ex_mem__mem_write) ? r__ex_mem__read_data_2 : `WORD_SIZE'bz;
-    assign w__inst = data1;
-    assign w__data = data2;
+
+    memory_io Memory_IO(
+        .clk(clk),
+        .reset_n(reset_n),
+        // input; memory state
+        .data1(data1),
+        .m1_ready(m1_ready),
+        .m1_ack(m1_ack),
+        .data2(data2),
+        .m2_ready(m2_ready),
+        .m2_ack(m2_ack),
+        // input for memory access decision and location
+        .read_inst(r__fetch),
+        .addr_inst(r__pc),
+        .read_data(rc__ex_mem__valid & rc__ex_mem__mem_read),
+        .write_data(rc__ex_mem__valid & rc__ex_mem__mem_write),
+        .addr_data(r__ex_mem__alu_out),
+        // output for accessing the memory
+        .read_m1(read_m1),
+        .address1(address1),
+        .read_m2(read_m2),
+        .write_m2(write_m2),
+        .address2(address2),
+        // output for fetching results
+        .res_inst(w__inst),
+        .res_data(w__data)
+    );
+
+    assign data2 = (write_m2) ? r__ex_mem__read_data_2 : `WORD_SIZE'bz;
     assign w__m1_ready = m1_ready;
     assign w__m2_ready = m2_ready;
 
@@ -538,6 +562,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
         if (w__m2_ready == 0) begin
             rc__mem_wb__reg_write <= 1'b0;
+            rc__mem_wb__valid <= 1'b0;
         end else begin
             // - EX/MEM
             if (rc__ex_mem__valid == 1'b1) begin
@@ -591,7 +616,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
             rc__id_ex__reg_write_dest <= c__reg_write_dest;
 
 
-            if (w__m1_ready == 0) begin    // memory port 1 not ready, waiting for fetch
+            if (w__m1_ready == 0 | first) begin    // memory port 1 not ready, waiting for fetch
+                first <= 1'b0;
                 rc__if_id__valid <= 1'b0;
                 r__if_id__inst <= `NOP;
             end
