@@ -94,23 +94,25 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     always @(posedge clk) begin
         if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL)
         begin
-            if (is_hit) begin // When cache hit occurs
+            if(is_hit) begin // When cache hit occurs
                 // Data array access
                 if(cache__valid[idx]) begin
+                    // Set 0
                     o__data <= cache__data[  idx  ][`WORD_SIZE*(addr[`OFF] + 1) - 1 : `WORD_SIZE*addr[`OFF]];
                     // Update LRU bit
                     cache__lru[idx] <= 0;
                     cache__lru[~idx] <= 1;
                 end else begin
+                    // Set 1
                     o__data <= cache__data[2 + idx][`WORD_SIZE*(addr[`OFF] + 1) - 1 : `WORD_SIZE*addr[`OFF]];
                     // Update LRU bit
                     cache__lru[2 + idx] <= 0;
                     cache__lru[2 + (~idx)] <= 1;
                 end
-                // Cache access ended
-                c__state <= `STATE_READY;
-            end
-            else begin // When cache miss occurs
+                // Cache access 
+                if (c__state == `STATE_READ) c__state <= `STATE_READY;
+                if (c__State == `STATE_READ_PARALLEL) c__state <= `STATE_READY_PARALLEL;
+            end else begin // When cache miss occurs
                 // Prepare for reading new data
                 m__read_m <= 1;
                 m__addr <= addr;
