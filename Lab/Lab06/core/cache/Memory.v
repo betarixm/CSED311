@@ -2,7 +2,6 @@
 `define PERIOD1 100
 `define MEMORY_SIZE 256	//	size of memory is 2^8 words (reduced size)
 `define WORD_SIZE 16	//	instead of 2^16 words to reduce memory
-`define QWORD_SIZE 64
             //	requirements in the Active-HDL simulator 
 
 `define IDLE 4'd1111
@@ -37,9 +36,9 @@ module Memory(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address
     output reg m2_ack;
     
     reg [`WORD_SIZE-1:0] memory [0:`MEMORY_SIZE-1];
-    reg [`QWORD_SIZE-1:0] output_data2;
+    reg [`WORD_SIZE-1:0] output_data2;
     
-    assign data2 = read_m2?output_data2:`QWORD_SIZE'bz;
+    assign data2 = read_m2?output_data2:`WORD_SIZE'bz;
 
     assign m1_ready = (timer_m1_ready == `IDLE);
     assign m2_ready = (timer_m2_ready == `IDLE);
