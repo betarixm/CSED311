@@ -123,8 +123,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                 end
             end
         end // STATE_READ
-        else if (c__state == `STATE_MEM_RD)
-        begin
+        else if (c__state == `STATE_MEM_RD) begin
             // Wait for finishing memory read
             if (m__ready) begin
                 o__data <= m__data[`WORD_SIZE*(addr[`OFF] + 1) - 1 : `WORD_SIZE*addr[`OFF]];
