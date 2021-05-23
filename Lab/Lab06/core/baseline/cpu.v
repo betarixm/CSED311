@@ -344,18 +344,18 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     mux4_1 mux__bc_forward_a(
         .sel(c__forward_bc_a),
-        .i1(c__pc_to_reg ? r__if_id__pc + 1: w__read_data_1),     // no forwarding
-        .i2(rc__ex_mem__pc_to_reg ? r__ex_mem__next_pc : r__ex_mem__alu_out),      // forwarding from MEM
-        .i3(rc__id_ex__pc_to_reg ? r__id_ex__next_pc : w__alu_out), // forwarding from EX
+        .i1(w__read_data_1),          // no forwarding
+        .i2(r__ex_mem__alu_out),      // forwarding from MEM
+        .i3(w__alu_out),              // forwarding from EX
         .i4(`WORD_SIZE'b0),
         .o(w__bc_forward_a)
     );
 
     mux4_1 mux__bc_forward_b(
         .sel(c__forward_bc_b),
-        .i1(c__pc_to_reg ? r__if_id__pc + 1: w__read_data_2),     // no forwarding
-        .i2(rc__ex_mem__pc_to_reg ? r__ex_mem__next_pc : r__ex_mem__alu_out),      // forwarding from MEM
-        .i3(rc__id_ex__pc_to_reg ? r__id_ex__next_pc : w__alu_out), // forwarding from EX
+        .i1(w__read_data_2),          // no forwarding
+        .i2(r__ex_mem__alu_out),      // forwarding from MEM
+        .i3(w__alu_out),              // forwarding from EX
         .i4(`WORD_SIZE'b0),
         .o(w__bc_forward_b)
     );
