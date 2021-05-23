@@ -29,7 +29,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     output reg [`WORD_SIZE-1:0] m__size;
     inout reg [`QWORD_SIZE-1:0] m__data;
     reg [`QWORD_SIZE-1:0] m__data_out;
-    input [`WORD_SIZE-1:0] m__ready;
+    input m__ready;
     input clk;
     
     reg is_hit;

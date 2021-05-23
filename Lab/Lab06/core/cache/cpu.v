@@ -26,8 +26,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     output write_m2;
     output [`WORD_SIZE-1:0] address2;
 
-    input [`QWORD_SIZE-1:0] data1;
-    inout [`QWORD_SIZE-1:0] data2;
+    input [`WORD_SIZE-1:0] data1;
+    inout [`WORD_SIZE-1:0] data2;
 
     output [`WORD_SIZE-1:0] num_inst;
     output [`WORD_SIZE-1:0] output_port;
@@ -62,7 +62,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
 
     wire w__d_cache__read_m, w__d_cache__write_m;
     wire [`WORD_SIZE-1:0] w__d_cache__addr;
-    wire [`QWORD_SIZE-1:0] w__d_cache__data;
+    wire [`WORD_SIZE-1:0] w__d_cache__data;
 
     // alu
     wire [2-1:0] c__forward_a;
@@ -522,17 +522,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, read_m2, write_m2, address2, 
     ////////////// MEM ////////////////
 
     /// Memory ///
-    assign read_m1 = r__fetch;
-    assign address1 = r__pc;
-    assign read_m2 = (rc__ex_mem__valid & rc__ex_mem__mem_read);
-    assign write_m2 = rc__ex_mem__mem_write;
-    assign address2 = r__ex_mem__alu_out;
-    assign data2 = (rc__ex_mem__mem_write) ? r__ex_mem__read_data_2 : `WORD_SIZE'bz;
-    assign w__inst = data1;
-    assign w__data = data2;
-    assign w__m1_ready = m1_ready;
-    assign w__m2_ready = m2_ready;
-
     memory_io Memory (
         .clk(clk),
         .reset_n(reset_n),
