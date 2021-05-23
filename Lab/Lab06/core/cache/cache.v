@@ -92,8 +92,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
 
     // Sequential Logic
     always @(posedge clk) begin
-        if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL)
-        begin
+        if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL) begin
             if(is_hit) begin // When cache hit occurs
                 // Data array access
                 if(cache__valid[idx]) begin
@@ -113,11 +112,15 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                 if (c__state == `STATE_READ) c__state <= `STATE_READY;
                 if (c__State == `STATE_READ_PARALLEL) c__state <= `STATE_READY_PARALLEL;
             end else begin // When cache miss occurs
-                // Prepare for reading new data
-                m__read_m <= 1;
-                m__addr <= addr;
-                // Will wait for memory read
-                c__state <= `STATE_MEM_RD;
+                if(c__state == `STATE_READ) begin
+                    // Prepare for reading new data
+                    m__read_m <= 1;
+                    m__addr <= addr;
+                    // Will wait for memory read
+                    c__state <= `STATE_MEM_RD;
+                end else if(c__state == `STATE_READ_PARALLEL) begin
+                    if (m__ready) c__state <= `STATE_READ;
+                end
             end
         end // STATE_READ
         else if (c__state == `STATE_MEM_RD)
