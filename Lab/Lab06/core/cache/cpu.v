@@ -565,6 +565,9 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
 
     assign data2 = (write_m2) ? w__d_cache__data[`WORD_SIZE-1:0] : `WORD_SIZE'bz;
     assign qdata2 = (write_q2) ? w__d_cache__data : `QWORD_SIZE'bz; 
+    
+    
+    wire w__d_cache__hit;
 
     cache d_cache(
         .c__read_m(rc__ex_mem__valid & rc__ex_mem__mem_read),
@@ -580,7 +583,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .m__data(w__d_cache__data),
         .m__ready(w__ready_data),
         .m__ack(w__ack_data),
-        .is_hit(),
+        .is_hit(w__d_cache__hit),
         .clk(clk),
         .reset_n(reset_n)
     );
@@ -617,7 +620,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         rc__mem_wb__valid <= rc__ex_mem__valid;
         rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
 
-        if (w__d_cache_ready == 0) begin
+        if (w__d_cache_ready == 0 && ~w__d_cache__hit) begin
             rc__mem_wb__reg_write <= 1'b0;
             rc__mem_wb__valid <= 1'b0;
         end else begin
