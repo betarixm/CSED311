@@ -697,7 +697,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
                         r__pc <= w__pred_pc;
                     end
                     else begin
-                        rc__id_ex__valid <= 1'b0;
+                        if (!((c__is_jump && r__pc != w__branch_address) || (c__is_branch && r__if_id__pred_pc != w__branch_address)))
+                            rc__id_ex__valid <= 1'b0;
                     end
                 end
 
