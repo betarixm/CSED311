@@ -347,7 +347,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
     cache i_cache(
         .c__read_m(r__fetch),
         .c__write_m(),
-        .addr(((c__is_jump) || (c__is_branch && r__if_id__pred_pc != w__branch_address)) ? w__branch_address : r__pc),
+        .addr(r__pc),
         .i__data(),
         .o__data(w__inst),
         .c__ready(w__i_cache_ready),
