@@ -269,9 +269,9 @@ module Memory(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2,
                                 qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], data2};
                             else if (address2==address1+1)
                                 qdata1 <= {memory[address1+3], memory[address1+2], data2, memory[address1+0]};
-                            else if (address2==address1+0)
+                            else if (address2==address1+2)
                                 qdata1 <= {memory[address1+3], data2, memory[address1+1], memory[address1+0]};
-                            else if (address2==address1+0)
+                            else if (address2==address1+3)
                                 qdata1 <= {data2, memory[address1+2], memory[address1+1], memory[address1+0]};
                             else
                                 qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};

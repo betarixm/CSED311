@@ -342,6 +342,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
 
     ////////// ID ///////////
 
+    wire w__i_cache__hit;
+
     cache i_cache(
         .c__read_m(r__fetch),
         .c__write_m(),
@@ -356,6 +358,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .m__data(w__i_cache__data),
         .m__ready(w__ready_inst),
         .m__ack(w__ack_inst),
+        .is_hit(w__i_cache__hit),
         .clk(clk),
         .reset_n(reset_n)
     );
@@ -577,6 +580,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .m__data(w__d_cache__data),
         .m__ready(w__ready_data),
         .m__ack(w__ack_data),
+        .is_hit(),
         .clk(clk),
         .reset_n(reset_n)
     );
@@ -682,7 +686,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
                     r__if_id__inst <= `NOP;
                 end else begin
                     rc__if_id__valid <= 1'b1;
-                    if (!c__hdu_is_stall) begin
+                    if ((w__ack_inst || w__i_cache__hit) && !c__hdu_is_stall) begin
                         r__if_id__inst <= w__inst;
                         r__if_id__pc <= r__pc;
                         r__if_id__pred_pc <= w__pred_pc;
@@ -701,8 +705,10 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
                 r__new_inst <= 1'b0;
                 // Update PC for jump and branch, Update flush
                 if (c__is_jump || (c__is_branch && r__if_id__pred_pc != w__branch_address)) begin
-                    r__pc <= w__branch_address;
-                    r__is_flush <= 1'b1;
+                    if(w__ack_inst || w__i_cache__hit) begin
+                        r__pc <= w__branch_address;
+                        r__is_flush <= 1'b1;
+                    end
                 end
             end
 
@@ -714,11 +720,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
             if (r__is_flush) begin
                 rc__if_id__valid = 1'b0;
                 r__if_id__inst = `NOP;
-            end
-            else if (~w__ready_inst) begin
-                rc__if_id__valid = 1'b0;
-                r__if_id__inst = `NOP;
-                r__pc = r__if_id__pc;                
             end
             else begin
                 r__if_id__inst = w__inst;
