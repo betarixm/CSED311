@@ -111,25 +111,23 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
         if (c__state == `STATE_MEM_RD) begin
             // Wait for finishing memory read
             if (m__ack) begin
-                $display("STATE_MEM_RD, ack now");
                 o__data = m__data[`WORD_SIZE*reading_addr[`OFF] +: `WORD_SIZE];
-                $display("\toutput: %h", o__data);
                 // Replace invalid or LRU data with new data from memory
-                if (cache__valid[idx] == 0 || (cache__valid[2+idx] == 1 && cache__lru[idx] == 1)) begin
+                if (cache__valid[reading_addr[`IDX]] == 0 || (cache__valid[2+reading_addr[`IDX]] == 1 && cache__lru[reading_addr[`IDX]] == 1)) begin
                     // Update cache
-                    cache__valid[idx] = 1;
-                    cache__lru[idx]   = 0;
-                    cache__lru[~idx]  = 1;
-                    cache__tag[idx]   = reading_addr[`TAG];
-                    cache__data[idx]  = m__data;
+                    cache__valid[reading_addr[`IDX]] = 1;
+                    cache__lru[reading_addr[`IDX]]   = 0;
+                    cache__lru[~reading_addr[`IDX]]  = 1;
+                    cache__tag[reading_addr[`IDX]]   = reading_addr[`TAG];
+                    cache__data[reading_addr[`IDX]]  = m__data;
                 end 
                 else begin
                     // Update cache
-                    cache__valid[2 + idx]  = 1;
-                    cache__lru[2 + idx]    = 0;
-                    cache__lru[2 + (~idx)] = 1;
-                    cache__tag[2 + idx]    = reading_addr[`TAG];
-                    cache__data[2 + idx]   = m__data;
+                    cache__valid[2 + reading_addr[`IDX]]  = 1;
+                    cache__lru[2 + reading_addr[`IDX]]    = 0;
+                    cache__lru[2 + (~reading_addr[`IDX])] = 1;
+                    cache__tag[2 + reading_addr[`IDX]]    = reading_addr[`TAG];
+                    cache__data[2 + reading_addr[`IDX]]   = m__data;
                 end
                 m__read_m = 0;
                 c__state = `STATE_READY;
@@ -140,7 +138,6 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
         begin
             // Wait for finishing memory write
             if (m__ack) begin
-                $display("STATE_MEM_WR, ack now");
                 m__write_m = 0;
                 c__state = `STATE_READY;
             end
@@ -165,13 +162,10 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
             reading_addr <= 0;
             c__state <= `STATE_READY;
         end else begin
-            $display("address : %h", addr);
-            $display("tag: %h, index: %h, offset: %h", addr[`TAG], addr[`IDX], addr[`OFF]);
             if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL) begin
                 if(is_hit) begin // When cache hit occurs
                     // Data array access
                     if(cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) begin
-                        $display("READ HIT cache1[%d](tag%d):%h", cache__valid[idx], cache__tag[idx], cache__data[idx]);
                         // Set 0
                         case(addr[`OFF])
                             0: o__data <= cache__data[  idx  ][`WORD_SIZE*1-1 : `WORD_SIZE*0];
@@ -183,7 +177,6 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                         cache__lru[idx] <= 0;
                         cache__lru[~idx] <= 1;
                     end else begin
-                        $display("READ HIT cache2[%d](tag%d):%h", cache__valid[2+idx], cache__tag[2+idx], cache__data[2+idx]);
                         // Set 1
                         case(addr[`OFF])
                             0: o__data <= cache__data[2 + idx][`WORD_SIZE*1-1 : `WORD_SIZE*0];
@@ -198,9 +191,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                     // Cache access 
                     if (c__state == `STATE_READ) c__state <= `STATE_READY;
                     if (c__state == `STATE_READ_PARALLEL) c__state <= `STATE_READY_PARALLEL;
-                    $display("\toutput: %h", o__data);
                 end else begin // When cache miss occurs
-                    $display("READ MISS");
                     if(c__state == `STATE_READ) begin
                         // Prepare for reading new data
                         m__read_m <= 1;
@@ -216,7 +207,6 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
             else if (c__state == `STATE_WRITE)
             begin
                 if (is_hit) begin // When cache hit occurs
-                    $display("WRITE HIT");
                     // Write to memory
                     // Let CPU move forward
                     // If any other write request occurs, and it misses, that request would stall until we finish the writing.
@@ -264,7 +254,6 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                     c__state <= `STATE_READY_PARALLEL;
                 end
                 else begin // When cache miss occurs
-                    $display("WRITE MISS");
                     // Write to memory (no allocate)
                     // CPU stall until we finish the writing.
                     m__write_m <= 1;
