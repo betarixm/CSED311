@@ -15,7 +15,7 @@
 `include "memory_io.v"
 
 
-module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, write_q2, address2, data2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack);
+module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack);
 
     input clk;
     input reset_n;
@@ -26,9 +26,7 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
     output write_m2, write_q2;
     output [`WORD_SIZE-1:0] address2;
 
-    input [`WORD_SIZE-1:0] data1;
     input [`QWORD_SIZE-1:0] qdata1;
-    inout [`WORD_SIZE-1:0] data2;
     inout [`QWORD_SIZE-1:0] qdata2;
 
     output [`WORD_SIZE-1:0] num_inst;
@@ -535,8 +533,6 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
     memory_io Memory (
         .clk(clk),
         .reset_n(reset_n),
-        .data1(data1),
-        .data2(data2),
         .qdata1(qdata1),
         .qdata2(qdata2),
         .m1_ready(m1_ready),
@@ -562,9 +558,8 @@ module cpu(clk, reset_n, read_m1, address1, data1, qdata1, read_m2, write_m2, wr
         .ready_data(w__ready_data),
         .ack_data(w__ack_data)
     );
-
-    assign data2 = (write_m2) ? w__d_cache__data[`WORD_SIZE-1:0] : `WORD_SIZE'bz;
-    assign qdata2 = (write_q2) ? w__d_cache__data : `QWORD_SIZE'bz; 
+    
+    assign qdata2 = (write_m2 | write_q2) ? w__d_cache__data : `QWORD_SIZE'bz; 
     
     
     wire w__d_cache__hit;

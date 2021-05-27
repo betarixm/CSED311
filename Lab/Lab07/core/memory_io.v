@@ -5,11 +5,10 @@
 `define INST 0
 `define DATA 1
 
-module memory_io(clk, reset_n, data1, qdata1, data2, qdata2, m1_ready, m1_ack, m2_ready, m2_ack, read_inst, read_data, write_data, addr_inst, addr_data, read_m1, read_m2, write_m2, write_q2, size_m2, address1, address2, res_inst, res_data, ready_inst, ack_inst, ready_data, ack_data);
+module memory_io(clk, reset_n, qdata1, qdata2, m1_ready, m1_ack, m2_ready, m2_ack, read_inst, read_data, write_data, addr_inst, addr_data, read_m1, read_m2, write_m2, write_q2, size_m2, address1, address2, res_inst, res_data, ready_inst, ack_inst, ready_data, ack_data);
     input clk;
     input reset_n;
 
-    input [`WORD_SIZE-1:0] data1, data2;
     input [`QWORD_SIZE-1:0] qdata1, qdata2;
     input m1_ready, m1_ack, m2_ready, m2_ack;
 
