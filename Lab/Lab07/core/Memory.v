@@ -16,7 +16,7 @@ module Memory(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_
     wire read_m1;
     input [`WORD_SIZE-1:0] address1;
     wire [`WORD_SIZE-1:0] address1;
-    output qdata1;
+    inout qdata1;
     reg [`QWORD_SIZE-1:0] qdata1;
     
     input read_m2;
@@ -38,8 +38,10 @@ module Memory(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_
     output reg m2_ack;
     
     reg [`WORD_SIZE-1:0] memory [0:`MEMORY_SIZE-1];
+    reg [`QWORD_SIZE-1:0] output_qdata1;
     reg [`QWORD_SIZE-1:0] output_qdata2;
 
+    assign qdata1 = read_m1?output_qdata1:`QWORD_SIZE'bz;
     assign qdata2 = read_m2?output_qdata2:`QWORD_SIZE'bz;
 
     assign m1_ready = (timer_m1_ready == `IDLE);
@@ -260,19 +262,19 @@ module Memory(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_
                         timer_m1_ready  <=  6-2;
                         if (write_m2)
                             if (address2==address1+0)
-                                qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], qdata2[`WORD_SIZE-1:0]};
+                                output_qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], qdata2[`WORD_SIZE-1:0]};
                             else if (address2==address1+1)
-                                qdata1 <= {memory[address1+3], memory[address1+2], qdata2[`WORD_SIZE-1:0], memory[address1+0]};
+                                output_qdata1 <= {memory[address1+3], memory[address1+2], qdata2[`WORD_SIZE-1:0], memory[address1+0]};
                             else if (address2==address1+2)
-                                qdata1 <= {memory[address1+3], qdata2[`WORD_SIZE-1:0], memory[address1+1], memory[address1+0]};
+                                output_qdata1 <= {memory[address1+3], qdata2[`WORD_SIZE-1:0], memory[address1+1], memory[address1+0]};
                             else if (address2==address1+3)
-                                qdata1 <= {qdata2[`WORD_SIZE-1:0], memory[address1+2], memory[address1+1], memory[address1+0]};
+                                output_qdata1 <= {qdata2[`WORD_SIZE-1:0], memory[address1+2], memory[address1+1], memory[address1+0]};
                             else
-                                qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
+                                output_qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
                         else if (write_q2)
-                            qdata1 <= (address1==address2)?qdata2:{memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
+                            output_qdata1 <= (address1==address2)?qdata2:{memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
                         else
-                            qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
+                            output_qdata1 <= {memory[address1+3], memory[address1+2], memory[address1+1], memory[address1+0]};
                         m1_ack <= 0;
                     end else if(timer_m1_ready > 0) begin
                         timer_m1_ready  <=  timer_m1_ready  - 1;

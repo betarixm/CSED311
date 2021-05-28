@@ -26,7 +26,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     output write_m2, write_q2;
     output [`WORD_SIZE-1:0] address2;
 
-    input [`QWORD_SIZE-1:0] qdata1;
+    inout [`QWORD_SIZE-1:0] qdata1;
     inout [`QWORD_SIZE-1:0] qdata2;
 
     output [`WORD_SIZE-1:0] num_inst;
@@ -158,6 +158,10 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     
     //    PIPELINE REGISTERS END   //
     /////////////////////////////////
+
+    // Bus
+    assign qdata1 = `QWORD_SIZE'bz;
+    assign qdata2 = (write_m2 | write_q2) ? w__d_cache__data : `QWORD_SIZE'bz;
 
     assign is_halted = rc__mem_wb__halt;
 
@@ -558,8 +562,6 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         .ready_data(w__ready_data),
         .ack_data(w__ack_data)
     );
-    
-    assign qdata2 = (write_m2 | write_q2) ? w__d_cache__data : `QWORD_SIZE'bz; 
     
     
     wire w__d_cache__hit;
