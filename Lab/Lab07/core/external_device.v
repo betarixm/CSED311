@@ -37,7 +37,7 @@ always @(posedge clk) begin
 	else begin
 		num_clk <= num_clk+1;
 		if(num_clk == 100) begin
-			intrpt <= `INTRPT_BEGIN;
+			intrpt <= `INST_DMA_BEGIN;
 		end else if (num_clk == 103) begin
 			intrpt <= 0;
 		end
