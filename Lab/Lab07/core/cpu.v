@@ -36,7 +36,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     input m1_ready, m1_ack;
     input m2_ready, m2_ack;
     input m2_br;
-    input reg m2_bg;
+    output reg m2_bg;
 
     ///////////////////////////////////////////////////
 
