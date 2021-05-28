@@ -1,5 +1,6 @@
 `timescale 1ns/1ns
 `define WORD_SIZE 16 
+`include "env.v"
 
 // TODO: implement your external_device module
 module external_device (clk, reset_n, intrpt);
@@ -35,7 +36,11 @@ always @(posedge clk) begin
 	end
 	else begin
 		num_clk <= num_clk+1;
-		// TODO: implement your sequential logic
+		if(num_clk == 100) begin
+			intrpt <= `INTRPT_BEGIN;
+		end else if (num_clk == 103) begin
+			intrpt <= 0;
+		end
 	end
 end
 endmodule

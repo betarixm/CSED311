@@ -24,10 +24,13 @@ module cpu_TB();
 	wire is_halted;				// set if the cpu is halted
 
 	wire m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg;
+	wire [1:0] ext_intrpt;
+	wire [1:0] dmac_intrpt;
 
 	// instantiate the unit under test
-	cpu UUT (clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg);
+	cpu UUT (clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg, dmac_intrpt, ext_intrpt);
 	Memory NUUT(!clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, m1_ready, m1_ack, m2_ready, m2_ack);
+	external_device ED(clk, reset_n, ext_intrpt);
 
 	// initialize inputs
 	initial begin
