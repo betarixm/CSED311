@@ -15,7 +15,7 @@
 `include "memory_io.v"
 
 
-module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg);
+module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg, dmac_intrpt_inst, ext_intrpt_inst);
 
     input clk;
     input reset_n;
@@ -37,6 +37,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     input m2_ready, m2_ack;
     input m2_br;
     output reg m2_bg;
+
+    input dmac_intrpt_inst, ext_intrpt_inst;
 
     ///////////////////////////////////////////////////
 
@@ -168,6 +170,10 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     assign qdata2 = (is_granted & (write_m2 | write_q2)) ? w__d_cache__data : `QWORD_SIZE'bz;
     // Bus end
 
+    // Interrupt begin
+    reg is_intrpt;    
+    // Interrupt end
+
     assign is_halted = rc__mem_wb__halt;
 
     mux4_1 mux__wwd_forward(
@@ -188,6 +194,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
 
     initial begin
         is_granted = 1;
+        is_intrpt = 0;
+        m2_bg = 0;
         r__fetch = 1;
         r__is_flush = 0;
         r__pc = 0;
@@ -615,122 +623,132 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
 
         // Arbiter end
 
-        haz <= c__hdu_is_stall;
-        // update Pipeline Registers
-        // - MEM/WB
-        r__mem_wb__wwd_value <= r__ex_mem__wwd_value;
-        r__mem_wb__alu_out <= r__ex_mem__alu_out;
-        r__mem_wb__rd <= r__ex_mem__rd;
-        r__mem_wb__rt <= r__ex_mem__rt;
-        r__mem_wb__read_data_1 <= r__ex_mem__read_data_1;
-        r__mem_wb__next_pc <= r__ex_mem__next_pc;
-        r__mem_wb__memory_read_data = w__data;
-        rc__mem_wb__wwd <= rc__ex_mem__wwd;
-        rc__mem_wb__halt <= rc__ex_mem__halt;
-        rc__mem_wb__mem_read <= rc__ex_mem__mem_read;
-        rc__mem_wb__mem_to_reg <= rc__ex_mem__mem_to_reg;
-        rc__mem_wb__pc_to_reg <= rc__ex_mem__pc_to_reg;
-        rc__mem_wb__reg_write <= rc__ex_mem__reg_write;
-        rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
-        rc__mem_wb__valid <= rc__ex_mem__valid;
-        rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
+        if(is_intrpt == 0) begin
+            haz <= c__hdu_is_stall;
+            // update Pipeline Registers
+            // - MEM/WB
+            r__mem_wb__wwd_value <= r__ex_mem__wwd_value;
+            r__mem_wb__alu_out <= r__ex_mem__alu_out;
+            r__mem_wb__rd <= r__ex_mem__rd;
+            r__mem_wb__rt <= r__ex_mem__rt;
+            r__mem_wb__read_data_1 <= r__ex_mem__read_data_1;
+            r__mem_wb__next_pc <= r__ex_mem__next_pc;
+            r__mem_wb__memory_read_data = w__data;
+            rc__mem_wb__wwd <= rc__ex_mem__wwd;
+            rc__mem_wb__halt <= rc__ex_mem__halt;
+            rc__mem_wb__mem_read <= rc__ex_mem__mem_read;
+            rc__mem_wb__mem_to_reg <= rc__ex_mem__mem_to_reg;
+            rc__mem_wb__pc_to_reg <= rc__ex_mem__pc_to_reg;
+            rc__mem_wb__reg_write <= rc__ex_mem__reg_write;
+            rc__mem_wb__reg_write_dest <= rc__ex_mem__reg_write_dest;
+            rc__mem_wb__valid <= rc__ex_mem__valid;
+            rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
 
-        if (w__d_cache_ready == 0 && ~w__d_cache__hit) begin
-            rc__mem_wb__reg_write <= 1'b0;
-            rc__mem_wb__valid <= 1'b0;
-        end else begin
-            // - EX/MEM
-            if (rc__ex_mem__valid == 1'b1) begin
-                r__num_inst <= r__num_inst + 1;
-            end
-            r__ex_mem__wwd_value <= w__wwd_src;
-            r__ex_mem__alu_out <= w__alu_out;
-            r__ex_mem__rd <= r__id_ex__rd;
-            r__ex_mem__rt <= r__id_ex__rt;
-            r__ex_mem__mux_alu_src_b <= w__mux_alu_src_b;
-            r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
-            r__ex_mem__read_data_2 <= r__id_ex__read_data_2;
-            r__ex_mem__next_pc <= r__id_ex__next_pc;
-            rc__ex_mem__wwd <= rc__id_ex__wwd;
-            rc__ex_mem__halt <= rc__id_ex__halt;
-            rc__ex_mem__mem_read <= rc__id_ex__mem_read;
-            rc__ex_mem__mem_write <= rc__id_ex__mem_write;
-            rc__ex_mem__mem_to_reg <= rc__id_ex__mem_to_reg;
-            rc__ex_mem__pc_to_reg <= rc__id_ex__pc_to_reg;
-            rc__ex_mem__reg_write <= rc__id_ex__reg_write;
-            rc__ex_mem__reg_write_dest <= rc__id_ex__reg_write_dest;
-            rc__ex_mem__valid <= rc__id_ex__valid;
-            rc__ex_mem__hdu_is_stall <= rc__id_ex__hdu_is_stall;
-            // - ID/EX
-            r__id_ex__read_data_1 <= w__read_data_1;
-            r__id_ex__read_data_2 <= w__read_data_2;
-            r__id_ex__imm_ext <= w__imm_ext;
-            r__id_ex__func_code <= w__func_code;
-            r__id_ex__rd <= r__if_id__inst[`RD];
-            r__id_ex__rt <= r__if_id__inst[`RT];
-            r__id_ex__rs <= r__if_id__inst[`RS];
-            r__id_ex__pc <= r__if_id__pc;
-            r__id_ex__next_pc <= r__if_id__pred_pc;
-            rc__id_ex__wwd <= c__wwd;
-            rc__id_ex__halt <= c__halt;
-            rc__id_ex__alu_src <= c__alu_src;
-            rc__id_ex__mem_read <= c__mem_read;
-            rc__id_ex__valid <= rc__if_id__valid;
-            rc__id_ex__hdu_is_stall <= c__hdu_is_stall;
-            if (c__hdu_is_stall) begin
-                rc__id_ex__mem_write <= 1'b0;
+            if (w__d_cache_ready == 0 && ~w__d_cache__hit) begin
+                rc__mem_wb__reg_write <= 1'b0;
+                rc__mem_wb__valid <= 1'b0;
             end else begin
-                rc__id_ex__mem_write <= c__mem_write;
-            end
-            rc__id_ex__mem_to_reg <= c__mem_to_reg; 
-            rc__id_ex__pc_to_reg <= c__pc_to_reg;
-            if (c__hdu_is_stall)
-                rc__id_ex__reg_write <= 1'b0;
-            else
-                rc__id_ex__reg_write <= c__reg_write;
-            rc__id_ex__reg_write_dest <= c__reg_write_dest;
+                // - EX/MEM
+                if (rc__ex_mem__valid == 1'b1) begin
+                    r__num_inst <= r__num_inst + 1;
+                end
+                r__ex_mem__wwd_value <= w__wwd_src;
+                r__ex_mem__alu_out <= w__alu_out;
+                r__ex_mem__rd <= r__id_ex__rd;
+                r__ex_mem__rt <= r__id_ex__rt;
+                r__ex_mem__mux_alu_src_b <= w__mux_alu_src_b;
+                r__ex_mem__read_data_1 <= r__id_ex__read_data_1;
+                r__ex_mem__read_data_2 <= r__id_ex__read_data_2;
+                r__ex_mem__next_pc <= r__id_ex__next_pc;
+                rc__ex_mem__wwd <= rc__id_ex__wwd;
+                rc__ex_mem__halt <= rc__id_ex__halt;
+                rc__ex_mem__mem_read <= rc__id_ex__mem_read;
+                rc__ex_mem__mem_write <= rc__id_ex__mem_write;
+                rc__ex_mem__mem_to_reg <= rc__id_ex__mem_to_reg;
+                rc__ex_mem__pc_to_reg <= rc__id_ex__pc_to_reg;
+                rc__ex_mem__reg_write <= rc__id_ex__reg_write;
+                rc__ex_mem__reg_write_dest <= rc__id_ex__reg_write_dest;
+                rc__ex_mem__valid <= rc__id_ex__valid;
+                rc__ex_mem__hdu_is_stall <= rc__id_ex__hdu_is_stall;
+                // - ID/EX
+                r__id_ex__read_data_1 <= w__read_data_1;
+                r__id_ex__read_data_2 <= w__read_data_2;
+                r__id_ex__imm_ext <= w__imm_ext;
+                r__id_ex__func_code <= w__func_code;
+                r__id_ex__rd <= r__if_id__inst[`RD];
+                r__id_ex__rt <= r__if_id__inst[`RT];
+                r__id_ex__rs <= r__if_id__inst[`RS];
+                r__id_ex__pc <= r__if_id__pc;
+                r__id_ex__next_pc <= r__if_id__pred_pc;
+                rc__id_ex__wwd <= c__wwd;
+                rc__id_ex__halt <= c__halt;
+                rc__id_ex__alu_src <= c__alu_src;
+                rc__id_ex__mem_read <= c__mem_read;
+                rc__id_ex__valid <= rc__if_id__valid;
+                rc__id_ex__hdu_is_stall <= c__hdu_is_stall;
+                if (c__hdu_is_stall) begin
+                    rc__id_ex__mem_write <= 1'b0;
+                end else begin
+                    rc__id_ex__mem_write <= c__mem_write;
+                end
+                rc__id_ex__mem_to_reg <= c__mem_to_reg; 
+                rc__id_ex__pc_to_reg <= c__pc_to_reg;
+                if (c__hdu_is_stall)
+                    rc__id_ex__reg_write <= 1'b0;
+                else
+                    rc__id_ex__reg_write <= c__reg_write;
+                rc__id_ex__reg_write_dest <= c__reg_write_dest;
 
 
-            if (w__ready_inst == 0 || first) begin    // memory instruction port not ready, waiting for fetch
-                first <= 0;
-                rc__if_id__valid <= 1'b0;
-                r__if_id__inst <= `NOP;
-            end
-            else begin
-                if (r__is_flush) begin     // fetch done, but we'll flush that
-                    r__is_flush <= 1'b0;
+                if (w__ready_inst == 0 || first) begin    // memory instruction port not ready, waiting for fetch
+                    first <= 0;
                     rc__if_id__valid <= 1'b0;
                     r__if_id__inst <= `NOP;
-                end else begin
-                    if ((w__ack_inst || w__i_cache__hit) && !c__hdu_is_stall) begin
-                        rc__if_id__valid <= 1'b1;
-                        r__if_id__inst <= w__inst;
-                        r__if_id__pc <= r__pc;
-                        r__if_id__pred_pc <= w__pred_pc;
-                        
-                        // Update PC
-                        r__pc <= w__pred_pc;
+                end
+                else begin
+                    if (r__is_flush) begin     // fetch done, but we'll flush that
+                        r__is_flush <= 1'b0;
+                        rc__if_id__valid <= 1'b0;
+                        r__if_id__inst <= `NOP;
+                    end else begin
+                        if ((w__ack_inst || w__i_cache__hit) && !c__hdu_is_stall) begin
+                            rc__if_id__valid <= 1'b1;
+                            r__if_id__inst <= w__inst;
+                            r__if_id__pc <= r__pc;
+                            r__if_id__pred_pc <= w__pred_pc;
+                            
+                            // Update PC
+                            r__pc <= w__pred_pc;
+                        end
+                        else begin
+                            if (!((c__is_jump && r__pc != w__branch_address) || (c__is_branch && r__if_id__pred_pc != w__branch_address)))
+                                rc__id_ex__valid <= 1'b0;
+                        end
                     end
-                    else begin
-                        if (!((c__is_jump && r__pc != w__branch_address) || (c__is_branch && r__if_id__pred_pc != w__branch_address)))
-                            rc__id_ex__valid <= 1'b0;
+
+                end  // end not i cache ready
+
+                // Update PC for jump and branch, Update flush
+                if (!c__hdu_is_stall) begin
+                    if ((c__is_jump && r__pc != w__branch_address) || (c__is_branch && r__if_id__pred_pc != w__branch_address)) begin
+                        r__pc <= w__branch_address;
+                        r__is_flush <= 1'b1;
                     end
                 end
 
-            end  // end not i cache ready
-
-            // Update PC for jump and branch, Update flush
-            if (!c__hdu_is_stall) begin
-                if ((c__is_jump && r__pc != w__branch_address) || (c__is_branch && r__if_id__pred_pc != w__branch_address)) begin
-                    r__pc <= w__branch_address;
-                    r__is_flush <= 1'b1;
-                end
-            end
-
-        end  // end not data cache ready
+            end  // end not data cache ready
+        end
     end // end always posedge clk
 
     always @(*) begin
+        // Interrupt begin
+        if(dmac_intrpt_inst == `INTRPT_BEGIN || ext_intrpt_inst == `INTRPT_BEGIN) begin
+            is_intrpt = 1;
+        end else if(dmac_intrpt_inst == `INTRPT_END || ext_intrpt_inst == `INTRPT_END) begin
+            is_intrpt = 0;
+        end
+        // Interrupt end
+
         if (r__if_id__inst !== `NOP && !haz) begin
             if (r__is_flush) begin
                 rc__if_id__valid = 1'b0;
