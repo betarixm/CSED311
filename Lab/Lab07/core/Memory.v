@@ -42,6 +42,7 @@ module Memory(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_
     reg [`QWORD_SIZE-1:0] output_qdata2;
 
     assign address1 = `QWORD_SIZE'bz;
+    assign address2 = `QWORD_SIZE'bz;
     assign qdata1 = read_m1?output_qdata1:`QWORD_SIZE'bz;
     assign qdata2 = read_m2?output_qdata2:`QWORD_SIZE'bz;
 
