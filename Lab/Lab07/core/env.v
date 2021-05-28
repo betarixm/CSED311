@@ -19,7 +19,7 @@
 
 `define NOP 16'hf11c
 
-`define DMA_BEGIN 0
-`define DMA_END 1
+`define INTRPT_BEGIN 0
+`define INTRPT_END 1
 
 // WWD $0, but different from real WWD $0 (0xf01c)
