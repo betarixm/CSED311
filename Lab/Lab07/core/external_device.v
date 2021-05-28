@@ -2,10 +2,12 @@
 `define WORD_SIZE 16 
 
 // TODO: implement your external_device module
-module external_device (clk, reset_n);
+module external_device (clk, reset_n, intrpt);
 
 input clk;
 input reset_n;
+
+output [1:0] intrupt;
 
 reg [`WORD_SIZE-1:0] num_clk; // num_clk to count cycles and trigger interrupt at appropriate cycle
 reg [`WORD_SIZE-1:0] data [0:`WORD_SIZE-1]; // data to transfer

@@ -38,7 +38,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     input m2_br;
     output reg m2_bg;
 
-    input dmac_intrpt_inst, ext_intrpt_inst;
+    input [1:0] dmac_intrpt_inst;
+    input [1:0] ext_intrpt_inst;
 
     ///////////////////////////////////////////////////
 
