@@ -160,8 +160,10 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     /////////////////////////////////
 
     // Bus
+    reg is_granted;
+
     assign qdata1 = `QWORD_SIZE'bz;
-    assign qdata2 = (write_m2 | write_q2) ? w__d_cache__data : `QWORD_SIZE'bz;
+    assign qdata2 = (is_granted & (write_m2 | write_q2)) ? w__d_cache__data : `QWORD_SIZE'bz;
 
     assign is_halted = rc__mem_wb__halt;
 
@@ -182,6 +184,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     assign num_inst = r__num_inst;
 
     initial begin
+        is_granted = 1;
         r__fetch = 1;
         r__is_flush = 0;
         r__pc = 0;
@@ -537,6 +540,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     memory_io Memory (
         .clk(clk),
         .reset_n(reset_n),
+        .is_granted(is_granted),
         .qdata1(qdata1),
         .qdata2(qdata2),
         .m1_ready(m1_ready),
