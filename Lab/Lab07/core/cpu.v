@@ -15,7 +15,7 @@
 `include "memory_io.v"
 
 
-module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack);
+module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg);
 
     input clk;
     input reset_n;
@@ -35,6 +35,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
 
     input m1_ready, m1_ack;
     input m2_ready, m2_ack;
+    input m2_br, m2_bg;
 
     ///////////////////////////////////////////////////
 
@@ -159,11 +160,12 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     //    PIPELINE REGISTERS END   //
     /////////////////////////////////
 
-    // Bus
+    // Bus Begin
     reg is_granted;
 
     assign qdata1 = `QWORD_SIZE'bz;
     assign qdata2 = (is_granted & (write_m2 | write_q2)) ? w__d_cache__data : `QWORD_SIZE'bz;
+    // Bus End
 
     assign is_halted = rc__mem_wb__halt;
 
