@@ -25,7 +25,7 @@ module Memory(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_
     wire write_m2;
     input write_q2;
     wire write_q2;
-    input [`WORD_SIZE-1:0] address2;
+    inout [`WORD_SIZE-1:0] address2;
     wire [`WORD_SIZE-1:0] address2;
     inout qdata2;
     wire [`QWORD_SIZE-1:0] qdata2;
