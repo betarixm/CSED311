@@ -21,7 +21,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     input reset_n;
 
     output read_m1;
-    output [`WORD_SIZE-1:0] address1;
+    inout [`WORD_SIZE-1:0] address1;
     output read_m2;
     output write_m2, write_q2;
     output [`WORD_SIZE-1:0] address2;
