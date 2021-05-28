@@ -18,4 +18,8 @@
 `define   REG_SIZE     2
 
 `define NOP 16'hf11c
-   // WWD $0, but different from real WWD $0 (0xf01c)
+
+`define DMA_BEGIN 0
+`define DMA_END 1
+
+// WWD $0, but different from real WWD $0 (0xf01c)
