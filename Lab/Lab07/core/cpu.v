@@ -645,11 +645,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         if(m2_br == 1 && !m2_ack) begin
             is_granted <= 0;
             m2_bg <= 1;
-        end else if(m2_br == 0) begin
-            is_granted <= 1;
-            m2_bg <= 0;
         end
-
         // Arbiter end
 
         if(is_intrpt) begin
@@ -795,6 +791,13 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         end
         // Interrupt end
 
+        // Arbiter begin
+        if(m2_br == 0) begin
+            is_granted = 1;
+            m2_bg = 0;
+        end
+        // Arbitier end
+        
         if (r__if_id__inst !== `NOP && !haz) begin
             if (r__is_flush) begin
                 rc__if_id__valid = 1'b0;

@@ -67,16 +67,13 @@ module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset
                 if (addr_offset == target_length - 4) begin
                     r__br <= 0;
                     c__write <= 0;
+                    intrpt <= `INST_DMA_END;
+                    addr_offset <= 0;
                 end else begin
                     c__write <= 1;
                     addr_offset <= addr_offset + 4;
                 end
             end
-        end
-
-        if (!bg && addr_offset == target_length - 4) begin
-            intrpt <= `INST_DMA_END;
-            addr_offset <= 0;
         end
 
         if (intrpt_resolved) begin
