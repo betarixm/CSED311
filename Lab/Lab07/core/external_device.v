@@ -53,7 +53,7 @@ module external_device (clk, reset_n, intrpt, bg, addr_offset, qdata2, intrpt_re
 		end
 		else begin
 			num_clk <= num_clk+1;
-			if(num_clk == 200) begin
+			if(num_clk == 100) begin
 				intrpt <= `INST_DMA_BEGIN;
 			end
 

@@ -70,7 +70,7 @@ module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset
                 end else begin
                     c__write <= 1;
                     addr_offset <= addr_offset + 4;
-                    r__br <= 0;
+                    // r__br <= 0;
                 end
             end
 

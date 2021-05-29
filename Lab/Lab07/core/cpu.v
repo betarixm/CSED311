@@ -404,7 +404,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         .m__ack(w__ack_inst),
         .is_hit(w__i_cache__hit),
         .clk(clk),
-        .reset_n(reset_n)
+        .reset_n(reset_n),
+        .is_granted(1'b1)
     );
 
     forwarding_unit Forwarding_BC_Unit(
@@ -626,7 +627,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         .m__ack(w__ack_data),
         .is_hit(w__d_cache__hit),
         .clk(clk),
-        .reset_n(reset_n)
+        .reset_n(reset_n),
+        .is_granted(is_granted)
     );
 
 

@@ -18,7 +18,7 @@
 `define STATE_WRITE_PARALLEL 3'd7
 
 
-module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m, m__write_m, m__addr, m__size, m__data, m__ready, m__ack, is_hit, clk, reset_n);
+module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m, m__write_m, m__addr, m__size, m__data, m__ready, m__ack, is_hit, clk, reset_n, is_granted);
     input c__read_m, c__write_m;
     input [`WORD_SIZE-1:0] addr;
     input [`WORD_SIZE-1:0] i__data;
@@ -32,6 +32,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     input m__ready;
     input m__ack;
     input clk, reset_n;
+    input is_granted;
 
     reg [`WORD_SIZE-1:0] reading_addr;
     
@@ -59,6 +60,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     assign data_3 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3] : cache__data[idx + 2][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3];
 
     initial begin
+        m__write_m = 0;
         cache__lru[0] = 0; 
         cache__lru[1] = 0; 
         cache__lru[2] = 0; 

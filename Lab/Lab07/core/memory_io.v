@@ -58,8 +58,8 @@ module memory_io(clk, reset_n, is_granted, qdata1, qdata2, m1_ready, m1_ack, m2_
     assign ready_inst = (m1_type == `INST) ? m1_ready : m2_bus_ready;
     assign ready_data = (m1_type == `DATA) ? m1_ready : m2_bus_ready;
 
-    assign ack_inst = (m1_type == `INST) ? m1_ack : m2_ack;
-    assign ack_data = (m1_type == `DATA) ? m1_ack : m2_ack;
+    assign ack_inst = (m1_type == `INST) ? m1_ack : (m2_ack & is_granted);
+    assign ack_data = (m1_type == `DATA) ? m1_ack : (m2_ack & is_granted);
 
 
     reg cnt;
