@@ -50,9 +50,6 @@ module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset
 
     always @(posedge clk) begin
         if (c__dmac_req) begin
-            $display("[DMA START](DMAC) REQ: %d", c__dmac_req);
-            $display("[DMA START](DMAC) ADR: %d", addr);
-            $display("[DMA START](DMAC) LEN: %d", data[`WORD_SIZE-1:0]);
             target_addr <= addr;
             target_length <= data[`WORD_SIZE-1:0];
             r__br <= 1;

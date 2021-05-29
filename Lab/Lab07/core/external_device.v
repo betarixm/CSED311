@@ -26,13 +26,7 @@ module external_device (clk, reset_n, intrpt, bg, addr_offset, qdata2, intrpt_re
 	) : (`QWORD_SIZE'bz);
 
 	always @(*) begin
-		if(bg) begin
-			$display("[DMA EXECUTING](EXT) Data: %h", {data[addr_offset + 3], data[addr_offset + 2], data[addr_offset + 1], data[addr_offset + 0]});
-			// o__data = {data[addr_offset + 3], data[addr_offset + 2], data[addr_offset + 1], data[addr_offset + 0]};
-			// qdata2 = o__data;
-		end else begin
-			// qdata2 = `QWORD_SIZE'bz;
-		end
+		
 	end
 
 	always @(posedge clk) begin
