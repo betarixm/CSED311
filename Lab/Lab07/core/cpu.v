@@ -167,7 +167,10 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     // Bus begin
     reg is_granted;
 
+    assign address1 = `WORD_SIZE'bz;
     assign qdata1 = `QWORD_SIZE'bz;
+
+    assign address2 = (is_granted & (write_m2 | write_q2)) ? w__d_cache__addr : `WORD_SIZE'bz;
     assign qdata2 = (is_granted & (write_m2 | write_q2)) ? w__d_cache__data : `QWORD_SIZE'bz;
     // Bus end
 
