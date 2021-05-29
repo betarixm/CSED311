@@ -30,11 +30,12 @@ module cpu_TB();
 	wire [1:0] dmac_intrpt;
 	wire c__dmac_req;
 
+	wire dmac_intrpt_resolved, ext_intrpt_resolved;
 	// instantiate the unit under test
-	cpu UUT (clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg, dmac_intrpt, ext_intrpt, c__dmac_req);
+	cpu UUT (clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg, dmac_intrpt, ext_intrpt, c__dmac_req, dmac_intrpt_resolved, ext_intrpt_resolved);
 	Memory NUUT(!clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, m1_ready, m1_ack, m2_ready, m2_ack);
-	DMA_controller DMAC(clk, reset_n, address2, qdata2, m2_br, m2_bg, c__dmac_req, dmac_offset, m2_ack, write_q2, dmac_intrpt);
-	external_device ED(clk, reset_n, ext_intrpt, m2_bg, dmac_offset, qdata2);
+	DMA_controller DMAC(clk, reset_n, address2, qdata2, m2_br, m2_bg, c__dmac_req, dmac_offset, m2_ack, write_q2, dmac_intrpt, dmac_intrpt_resolved);
+	external_device ED(clk, reset_n, ext_intrpt, m2_bg, dmac_offset, qdata2, ext_intrpt_resolved);
 
 	// initialize inputs
 	initial begin

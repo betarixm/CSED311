@@ -3,7 +3,7 @@
 `include "env.v"
 
 // TODO: implement your external_device module
-module external_device (clk, reset_n, intrpt, bg, addr_offset, qdata2);
+module external_device (clk, reset_n, intrpt, bg, addr_offset, qdata2, intrpt_resolved);
 
 input clk;
 input reset_n;
@@ -14,6 +14,8 @@ input bg;
 input [`WORD_SIZE-1:0] addr_offset;
 
 inout [`QWORD_SIZE-1:0] qdata2;
+
+input intrpt_resolved;
 
 reg [`QWORD_SIZE-1:0] o__data;
 reg [`WORD_SIZE-1:0] num_clk; // num_clk to count cycles and trigger interrupt at appropriate cycle
@@ -50,7 +52,7 @@ always @(posedge clk) begin
 			intrpt <= `INST_DMA_BEGIN;
 		end
 
-		if(intrpt == `INST_DMA_BEGIN) begin
+		if(intrpt_resolved) begin
 			intrpt <= 0;
 		end
 	end

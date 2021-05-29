@@ -15,7 +15,7 @@
 `include "memory_io.v"
 
 
-module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg, dmac_intrpt_inst, ext_intrpt_inst, dmac_req);
+module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg, dmac_intrpt_inst, ext_intrpt_inst, dmac_req, dmac_intrpt_resolved, ext_intrpt_resolved);
 
     input clk;
     input reset_n;
@@ -43,6 +43,9 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     input [1:0] ext_intrpt_inst;
 
     output dmac_req;
+
+    output reg dmac_intrpt_resolved;
+    output reg ext_intrpt_resolved;
 
     ///////////////////////////////////////////////////
 
@@ -175,7 +178,10 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     // Interrupt end
 
     // DMAC begin
-    assign dmac_req = (is_intrpt && intrpt_inst == `INST_DMA_BEGIN) ? 1 : 0;
+    reg dmac_req;
+    // assign dmac_req = (is_intrpt && intrpt_inst == `INST_DMA_BEGIN) ? 1 : 0;
+    reg [`WORD_SIZE-1:0] dmac_addr;
+    reg [`QWORD_SIZE-1:0] dmac_length;
     // DMAC end
 
     // Bus begin
@@ -184,10 +190,10 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     assign address1 = `WORD_SIZE'bz;
     assign qdata1 = `QWORD_SIZE'bz;
 
-    assign address2 = (dmac_req) ? (`WORD_SIZE'h00d0) : (
+    assign address2 = (dmac_req) ? (dmac_addr) : (
         (is_granted & (write_m2 | write_q2)) ? w__d_cache__addr : `WORD_SIZE'bz
     );
-    assign qdata2 = (dmac_req) ? (`QWORD_SIZE'h000c) : (
+    assign qdata2 = (dmac_req) ? (dmac_length) : (
         (is_granted & (write_m2 | write_q2)) ? w__d_cache__data : `QWORD_SIZE'bz
     );
 
@@ -215,6 +221,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     initial begin
         is_granted = 1;
         is_intrpt = 0;
+        dmac_intrpt_resolved = 0;
+        ext_intrpt_resolved = 0;
         m2_bg = 0;
         r__fetch = 1;
         r__is_flush = 0;
@@ -644,7 +652,19 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
 
         // Arbiter end
 
-        if(is_intrpt == 0) begin
+        if(is_intrpt) begin
+            if (intrpt_inst == `INST_DMA_BEGIN) begin
+                dmac_req <= 1;
+                dmac_addr <= `WORD_SIZE'h00d0;
+                dmac_length <= `QWORD_SIZE'h000c;
+                ext_intrpt_resolved <= 1;
+            end else if (intrpt_inst == `INST_DMA_END) begin
+                dmac_intrpt_resolved <= 1;
+            end
+        end else begin
+            dmac_req <= 0;
+            dmac_intrpt_resolved <= 0;
+            ext_intrpt_resolved <= 0;
             haz <= c__hdu_is_stall;
             // update Pipeline Registers
             // - MEM/WB
