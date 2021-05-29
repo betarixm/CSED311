@@ -15,7 +15,7 @@
 `include "memory_io.v"
 
 
-module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg, dmac_intrpt_inst, ext_intrpt_inst);
+module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2, address2, qdata2, num_inst, output_port, is_halted, m1_ready, m1_ack, m2_ready, m2_ack, m2_br, m2_bg, dmac_intrpt_inst, ext_intrpt_inst, dmac_req);
 
     input clk;
     input reset_n;
@@ -40,6 +40,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
 
     input [1:0] dmac_intrpt_inst;
     input [1:0] ext_intrpt_inst;
+
+    output dmac_req;
 
     ///////////////////////////////////////////////////
 
@@ -164,19 +166,28 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     //    PIPELINE REGISTERS END   //
     /////////////////////////////////
 
+    // Interrupt begin
+    reg is_intrpt;
+    reg [1:0] intrpt_inst;  
+    // Interrupt end
+
+    // DMAC begin
+    assign dmac_req = (is_intrpt && intrpt_inst == `INST_DMA_BEGIN) ? 1 : 0;
+    // DMAC end
+
     // Bus begin
     reg is_granted;
 
     assign address1 = `WORD_SIZE'bz;
     assign qdata1 = `QWORD_SIZE'bz;
 
-    assign address2 = (is_granted & (write_m2 | write_q2)) ? w__d_cache__addr : `WORD_SIZE'bz;
-    assign qdata2 = (is_granted & (write_m2 | write_q2)) ? w__d_cache__data : `QWORD_SIZE'bz;
+    assign address2 = (dmac_req) ? (`WORD_SIZE'h00d0) : (
+        (is_granted & (write_m2 | write_q2)) ? w__d_cache__addr : `WORD_SIZE'bz
+    );
+    assign qdata2 = (dmac_req) ? (`QWORD_SIZE'h000c) : (
+        (is_granted & (write_m2 | write_q2)) ? w__d_cache__data : `QWORD_SIZE'bz
+    );
     // Bus end
-
-    // Interrupt begin
-    reg is_intrpt;    
-    // Interrupt end
 
     assign is_halted = rc__mem_wb__halt;
 
@@ -579,7 +590,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         .ready_inst(w__ready_inst),
         .ack_inst(w__ack_inst),
         .ready_data(w__ready_data),
-        .ack_data(w__ack_data)
+        .ack_data(w__ack_data),
+        .dmac_req(dmac_req)
     );
     
     
@@ -748,10 +760,13 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         // Interrupt begin
         if(dmac_intrpt_inst == `INST_DMA_BEGIN || ext_intrpt_inst == `INST_DMA_BEGIN) begin
             is_intrpt = 1;
+            intrpt_inst = `INST_DMA_BEGIN;
         end else if(dmac_intrpt_inst == `INST_DMA_END || ext_intrpt_inst == `INST_DMA_END) begin
             is_intrpt = 1;
+            intrpt_inst = `INST_DMA_END;
         end else begin
             is_intrpt = 0;
+            intrpt_inst = 0;
         end
         // Interrupt end
 
