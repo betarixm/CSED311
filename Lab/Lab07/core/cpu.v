@@ -641,23 +641,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     reg haz;
 
     always @(posedge clk) begin
-        // Arbiter begin
-        if(m2_br == 1 && !m2_ack) begin
-            is_granted <= 0;
-            m2_bg <= 1;
-        end
-        // Arbiter end
-
-        if(is_intrpt) begin
-            if (intrpt_inst == `INST_DMA_BEGIN) begin
-                dmac_req <= 1;
-                dmac_addr <= `WORD_SIZE'h00d0;
-                dmac_length <= `QWORD_SIZE'h000c;
-                ext_intrpt_resolved <= 1;
-            end else if (intrpt_inst == `INST_DMA_END) begin
-                dmac_intrpt_resolved <= 1;
-            end
-        end else begin
+        if(!is_intrpt) begin
             dmac_req <= 0;
             dmac_intrpt_resolved <= 0;
             ext_intrpt_resolved <= 0;
@@ -792,11 +776,29 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         // Interrupt end
 
         // Arbiter begin
+        if(m2_ready && (m2_br == 1 && !m2_ack)) begin
+            is_granted = 0;
+            m2_bg = 1;
+        end
+
         if(m2_br == 0) begin
             is_granted = 1;
             m2_bg = 0;
         end
         // Arbitier end
+
+        if(is_intrpt) begin
+            if (intrpt_inst == `INST_DMA_BEGIN) begin
+                dmac_req = 1;
+                dmac_addr = `WORD_SIZE'h00d0;
+                dmac_length = `QWORD_SIZE'h000c;
+                ext_intrpt_resolved = 1;
+            end else if (intrpt_inst == `INST_DMA_END) begin
+                dmac_intrpt_resolved = 1;
+            end
+        end else begin
+            dmac_req = 0;
+        end
         
         if (r__if_id__inst !== `NOP && !haz) begin
             if (r__is_flush) begin
