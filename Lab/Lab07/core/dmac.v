@@ -1,6 +1,6 @@
 `include "env.v"
 
-module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset, m2_ack, write_q2);
+module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset, m2_ack, write_q2, intrpt);
     input clk;
     input reset_n;
 
@@ -19,6 +19,8 @@ module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset
     input m2_ack;
 
     inout write_q2;
+
+    output reg [1:0] intrpt;
 
     reg [`WORD_SIZE-1:0] target_addr;
     reg [`WORD_SIZE-1:0] target_length;
@@ -69,6 +71,15 @@ module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset
                     addr_offset <= addr_offset + 4;
                 end
             end
+        end
+
+        if (!bg && addr_offset == target_length - 4) begin
+            intrpt <= `INST_DMA_END;
+            addr_offset <= 0;
+        end
+
+        if (intrpt == `INST_DMA_END) begin
+            intrpt <= 0;
         end
     end
 
