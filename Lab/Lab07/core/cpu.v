@@ -23,7 +23,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     output read_m1;
     inout [`WORD_SIZE-1:0] address1;
     output read_m2;
-    output write_m2, write_q2;
+    output write_m2;
+    inout write_q2;
     inout [`WORD_SIZE-1:0] address2;
 
     inout [`QWORD_SIZE-1:0] qdata1;
@@ -166,6 +167,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     //    PIPELINE REGISTERS END   //
     /////////////////////////////////
 
+    wire w__imm__write_q2;
+    
     // Interrupt begin
     reg is_intrpt;
     reg [1:0] intrpt_inst;  
@@ -187,6 +190,8 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     assign qdata2 = (dmac_req) ? (`QWORD_SIZE'h000c) : (
         (is_granted & (write_m2 | write_q2)) ? w__d_cache__data : `QWORD_SIZE'bz
     );
+
+    assign write_q2 = (is_granted) ? (w__imm__write_q2) : (1'bz);
     // Bus end
 
     assign is_halted = rc__mem_wb__halt;
@@ -581,7 +586,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         .read_m1(read_m1),
         .read_m2(read_m2),
         .write_m2(write_m2),
-        .write_q2(write_q2),
+        .write_q2(w__imm__write_q2),
         .size_m2(size_m2),
         .address1(address1),
         .address2(address2),
