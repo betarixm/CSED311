@@ -642,13 +642,13 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
 
     always @(posedge clk) begin
         // Arbiter begin
-            if(m2_br == 1 && !m2_ack) begin
-                is_granted <= 0;
-                m2_bg <= 1;
-            end else if(m2_br == 0) begin
-                is_granted <= 1;
-                m2_bg <= 0;
-            end
+        if(m2_br == 1 && !m2_ack) begin
+            is_granted <= 0;
+            m2_bg <= 1;
+        end else if(m2_br == 0) begin
+            is_granted <= 1;
+            m2_bg <= 0;
+        end
 
         // Arbiter end
 
