@@ -51,7 +51,7 @@ module memory_io(clk, reset_n, is_granted, qdata1, qdata2, m1_ready, m1_ack, m2_
     assign data_writing = (~m2_bus_ready & ~m2_ack & m2_type == `DATA);
 
     assign address1 = (m1_type == `INST) ? addr_inst : addr_data;
-    assign address2 = (dmac_req) ? (`WORD_SIZE'bz) : (
+    assign address2 = (dmac_req || (!is_granted)) ? (`WORD_SIZE'bz) : (
         (m2_type == `DATA) ? addr_data : addr_inst
     );
 
