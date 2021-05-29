@@ -253,7 +253,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                         cache__valid[2 + idx] <= 0;
                     end
                     // Cache access ended
-                    c__state <= `STATE_READY_PARALLEL;
+                    if(is_granted) c__state <= `STATE_READY_PARALLEL;
                 end
                 else begin // When cache miss occurs
                     // Write to memory (no allocate)
