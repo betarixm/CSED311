@@ -763,16 +763,22 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
 
     always @(*) begin
         // Interrupt begin
-        if(dmac_intrpt_inst == `INST_DMA_BEGIN || ext_intrpt_inst == `INST_DMA_BEGIN) begin
-            is_intrpt = 1;
-            intrpt_inst = `INST_DMA_BEGIN;
-        end else if(dmac_intrpt_inst == `INST_DMA_END || ext_intrpt_inst == `INST_DMA_END) begin
-            is_intrpt = 1;
-            intrpt_inst = `INST_DMA_END;
+        if(!(read_m1 | read_m2 | write_m2 | write_q2)) begin
+            if(dmac_intrpt_inst == `INST_DMA_BEGIN || ext_intrpt_inst == `INST_DMA_BEGIN) begin
+                is_intrpt = 1;
+                intrpt_inst = `INST_DMA_BEGIN;
+            end else if(dmac_intrpt_inst == `INST_DMA_END || ext_intrpt_inst == `INST_DMA_END) begin
+                is_intrpt = 1;
+                intrpt_inst = `INST_DMA_END;
+            end else begin
+                is_intrpt = 0;
+                intrpt_inst = 0;
+            end
         end else begin
             is_intrpt = 0;
             intrpt_inst = 0;
         end
+
         // Interrupt end
 
         // Arbiter begin
