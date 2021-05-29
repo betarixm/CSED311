@@ -1,6 +1,6 @@
 `include "env.v"
 
-module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req);
+module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset, m2_ack);
     input clk;
     input reset_n;
 
@@ -15,11 +15,22 @@ module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req);
     // From CPU
     input c__dmac_req;
 
+    output reg [`WORD_SIZE-1:0] addr_offset;
+    input m2_ack;
+
     reg [`WORD_SIZE-1:0] target_addr;
     reg [`WORD_SIZE-1:0] target_length;
 
-    assign addr = `WORD_SIZE'bz;
+    reg r__br;
+
+    assign addr = (bg) ? (target_addr + addr_offset) : `WORD_SIZE'bz;
     assign data = `QWORD_SIZE'bz;
+    assign br = r__br;
+
+    initial begin
+        r__br = 0;
+        addr_offset = 0;
+    end
 
     always @(*) begin
 	    // TODO: implement your combinational logic
@@ -32,7 +43,20 @@ module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req);
             $display("[DMA START](DMAC) LEN: %d", data[`WORD_SIZE-1:0]);
             target_addr <= addr;
             target_length <= data[`WORD_SIZE-1:0];
+            r__br <= 1;
         end
+        
+        if (bg && br) begin
+            $display("[DMA EXECUTING](DMAC) ADDR: %d", target_addr + addr_offset);
+        end
+
+        if (addr_offset == target_length) begin
+            r__br <= 0;
+        end else if (bg && addr_offset < target_length) begin
+            addr_offset <= addr_offset + 4;
+        end
+
+
     end
 
 endmodule

@@ -3,13 +3,17 @@
 `include "env.v"
 
 // TODO: implement your external_device module
-module external_device (clk, reset_n, intrpt);
+module external_device (clk, reset_n, intrpt, bg, addr_offset);
 
 input clk;
 input reset_n;
 
 output reg [1:0] intrpt;
 
+input bg;
+input [`WORD_SIZE-1:0] addr_offset;
+
+reg [`QWORD_SIZE-1:0] o__data;
 reg [`WORD_SIZE-1:0] num_clk; // num_clk to count cycles and trigger interrupt at appropriate cycle
 reg [`WORD_SIZE-1:0] data [0:`WORD_SIZE-1]; // data to transfer
 
@@ -38,8 +42,15 @@ always @(posedge clk) begin
 		num_clk <= num_clk+1;
 		if(num_clk == 100) begin
 			intrpt <= `INST_DMA_BEGIN;
-		end else if (num_clk == 101) begin
+		end
+
+		if(intrpt == `INST_DMA_BEGIN) begin
 			intrpt <= 0;
+		end
+
+		if(bg) begin
+			$display("[DMA EXECUTING](EXT) Data: %h", {data[addr_offset + 3], data[addr_offset + 2], data[addr_offset + 1], data[addr_offset + 0]});
+			o__data <= {data[addr_offset + 3], data[addr_offset + 2], data[addr_offset + 1], data[addr_offset + 0]};
 		end
 	end
 end
