@@ -11,10 +11,12 @@
 `define MEM       2'b10
 
 
-module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, MEMWB_RegWrite, MEMWB_RegWriteDest, MEMWB_RD, MEMWB_RT, IDEX_RS, IDEX_RT, forward_a, forward_b);
+module forwarding_unit (EXMEM_Valid, EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, MEMWB_Valid, MEMWB_RegWrite, MEMWB_RegWriteDest, MEMWB_RD, MEMWB_RT, IDEX_RS, IDEX_RT, forward_a, forward_b);
+    input EXMEM_Valid;
     input EXMEM_RegWrite;
     input [2-1:0] EXMEM_RegWriteDest;
     input [`REG_SIZE-1:0] EXMEM_RD, EXMEM_RT;
+    input MEMWB_Valid;
     input MEMWB_RegWrite;
     input [2-1:0] MEMWB_RegWriteDest;
     input [`REG_SIZE-1:0] MEMWB_RD, MEMWB_RT;
@@ -25,7 +27,11 @@ module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, 
 
     always @(*) begin
         if (EXMEM_RegWrite) begin
-            if (EXMEM_RegWriteDest == `RD_W) begin
+            if (~EXMEM_Valid) begin
+                forward_a = `None;
+                forward_b = `None;
+            end
+            else if (EXMEM_RegWriteDest == `RD_W) begin
                 if (IDEX_RS == EXMEM_RD) forward_a = `MEM;
                 else forward_a = `None;
                 if (IDEX_RT == EXMEM_RD) forward_b = `MEM;
@@ -46,7 +52,11 @@ module forwarding_unit (EXMEM_RegWrite, EXMEM_RegWriteDest, EXMEM_RD, EXMEM_RT, 
         end
 
         else if (MEMWB_RegWrite) begin
-            if (MEMWB_RegWriteDest == `RD_W) begin
+            if (~MEMWB_Valid) begin
+                forward_a = `None;
+                forward_b = `None;
+            end
+            else if (MEMWB_RegWriteDest == `RD_W) begin
                 if (IDEX_RS == MEMWB_RD) forward_a = `WB;
                 else forward_a = `None;
                 if (IDEX_RT == MEMWB_RD) forward_b = `WB;

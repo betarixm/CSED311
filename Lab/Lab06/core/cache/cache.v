@@ -18,7 +18,7 @@
 `define STATE_WRITE_PARALLEL 3'd7
 
 
-module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m, m__write_m, m__addr, m__size, m__data, m__ready, m__ack, is_hit, clk, reset_n);
+module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m, m__write_m, m__addr, m__size, m__data, m__ready, m__ack, is_instant, clk, reset_n);
     input c__read_m, c__write_m;
     input [`WORD_SIZE-1:0] addr;
     input [`WORD_SIZE-1:0] i__data;
@@ -34,8 +34,12 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     input clk, reset_n;
 
     reg [`WORD_SIZE-1:0] reading_addr;
+    reg [`WORD_SIZE-1:0] next_writing_addr;
+    reg [`WORD_SIZE-1:0] next_writing_data;
+    reg from_write_parallel;
     
-    output reg is_hit;
+    output is_instant;
+    reg is_hit;
     reg [2:0] c__state;
 
     reg                   cache__valid[3:0];
@@ -58,6 +62,8 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     assign data_2 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 3 - 1:`WORD_SIZE * 2] : cache__data[idx + 2][`WORD_SIZE * 3 - 1:`WORD_SIZE * 2];
     assign data_3 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3] : cache__data[idx + 2][`WORD_SIZE * 4 - 1:`WORD_SIZE * 3];
 
+    assign is_instant = is_hit;
+
     initial begin
         cache__lru[0] = 0; 
         cache__lru[1] = 0; 
@@ -71,6 +77,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
 
         reading_addr = 0;
         c__state = `STATE_READY;
+        from_write_parallel = 0;
     end
 
     // Combinational Logic
@@ -81,29 +88,19 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                 if (c__write_m) c__state = `STATE_WRITE;
             end else if (c__state == `STATE_READY_PARALLEL) begin
                 if (c__read_m)  c__state = `STATE_READ_PARALLEL;
-                if (c__write_m) c__state = `STATE_WRITE_PARALLEL;
+                if (c__write_m) begin
+                    c__state = `STATE_WRITE_PARALLEL;
+                    next_writing_addr = addr;
+                    next_writing_data = i__data;
+                end
             end
 
             // Tag array access
-            is_hit = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) || (cache__valid[2 + idx] && cache__tag[2 + idx] == addr[`TAG]);
-        end
-
-        if (c__state == `STATE_READY_PARALLEL) begin
-            // Observe if memory write is finished
-            if (m__ack) begin
-                m__write_m = 0;
-                c__state = `STATE_READY;
+            if (from_write_parallel) begin
+                is_hit = (cache__valid[next_writing_addr[`IDX]] && (cache__tag[next_writing_addr[`IDX]] == next_writing_addr[`TAG])) || (cache__valid[2 + next_writing_addr[`IDX]] && cache__tag[2 + next_writing_addr[`IDX]] == next_writing_addr[`TAG]);
             end
-        end else if (c__state == `STATE_READ_PARALLEL) begin
-            // Observe if memory write is finished
-            if (m__ack) begin
-                m__write_m = 0;
-                c__state = `STATE_READ;
-            end
-        end else if (c__state == `STATE_WRITE_PARALLEL) begin
-            if (m__ack) begin
-                m__write_m = 0;
-                c__state = `STATE_WRITE;
+            else begin
+                is_hit = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) || (cache__valid[2 + idx] && cache__tag[2 + idx] == addr[`TAG]);
             end
         end
 
@@ -161,6 +158,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
 
             reading_addr <= 0;
             c__state <= `STATE_READY;
+            from_write_parallel <= 0;
         end else begin
             if (c__state == `STATE_READ || c__state == `STATE_READ_PARALLEL) begin
                 if(is_hit) begin // When cache hit occurs
@@ -206,64 +204,144 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
             end // STATE_READ
             else if (c__state == `STATE_WRITE)
             begin
+                from_write_parallel <= 0;
                 if (is_hit) begin // When cache hit occurs
-                    // Write to memory
-                    // Let CPU move forward
-                    // If any other write request occurs, and it misses, that request would stall until we finish the writing.
-                    m__write_m <= 1;
-                    m__addr <= {addr[`WORD_SIZE-1:2], 2'b00}; // aligned address
-                    m__size <= `QWORD_SIZE;
-                    // Data array access
-                    if(cache__valid[idx]) begin
-                        case(addr[`OFF])
-                            0: begin
-                                m__data_out <= {data_3, data_2, data_1, i__data};
-                            end
-                            1: begin
-                                m__data_out <= {data_3, data_2, i__data, data_0};
-                            end
-                            2: begin
-                                m__data_out <= {data_3, i__data, data_1, data_0};
-                            end
-                            3: begin
-                                m__data_out <= {i__data, data_2, data_1, data_0};
-                            end
-                        endcase
+                    if (from_write_parallel) begin
+                        // Write to memory
+                        // Let CPU move forward
+                        // If any other write request occurs, and it misses, that request would stall until we finish the writing.
+                        m__write_m <= 1;
+                        m__addr <= {next_writing_addr[`WORD_SIZE-1:2], 2'b00}; // aligned next_writing_address
+                        m__size <= `QWORD_SIZE;
+                        // Data array access
+                        if(cache__valid[next_writing_addr[`IDX]] && (cache__tag[next_writing_addr[`IDX]] == next_writing_addr[`TAG])) begin
+                            case(next_writing_addr[`OFF])
+                                0: begin
+                                    m__data_out <= {data_3, data_2, data_1, next_writing_data};
+                                end
+                                1: begin
+                                    m__data_out <= {data_3, data_2, next_writing_data, data_0};
+                                end
+                                2: begin
+                                    m__data_out <= {data_3, next_writing_data, data_1, data_0};
+                                end
+                                3: begin
+                                    m__data_out <= {next_writing_data, data_2, data_1, data_0};
+                                end
+                            endcase
 
-                        // Update Cache
-                        cache__valid[idx] <= 0;
-                    end else begin
-                        case(addr[`OFF])
-                            0: begin
-                                m__data_out <= {data_3, data_2, data_1, i__data};
-                            end
-                            1: begin
-                                m__data_out <= {data_3, data_2, i__data, data_0};
-                            end
-                            2: begin
-                                m__data_out <= {data_3, i__data, data_1, data_0};
-                            end
-                            3: begin
-                                m__data_out <= {i__data, data_2, data_1, data_0};
-                            end
-                        endcase
-                        // Update Cache
-                        cache__valid[2 + idx] <= 0;
+                            // Update Cache
+                            cache__valid[next_writing_addr[`IDX]] <= 0;
+                        end else begin
+                            case(next_writing_addr[`OFF])
+                                0: begin
+                                    m__data_out <= {data_3, data_2, data_1, next_writing_data};
+                                end
+                                1: begin
+                                    m__data_out <= {data_3, data_2, next_writing_data, data_0};
+                                end
+                                2: begin
+                                    m__data_out <= {data_3, next_writing_data, data_1, data_0};
+                                end
+                                3: begin
+                                    m__data_out <= {next_writing_data, data_2, data_1, data_0};
+                                end
+                            endcase
+                            // Update Cache
+                            cache__valid[2 + next_writing_addr[`IDX]] <= 0;
+                        end
+                        // Cache access ended
+                        c__state <= `STATE_READY_PARALLEL;
                     end
-                    // Cache access ended
-                    c__state <= `STATE_READY_PARALLEL;
+                    else begin
+                        // Write to memory
+                        // Let CPU move forward
+                        // If any other write request occurs, and it misses, that request would stall until we finish the writing.
+                        m__write_m <= 1;
+                        m__addr <= {addr[`WORD_SIZE-1:2], 2'b00}; // aligned address
+                        m__size <= `QWORD_SIZE;
+                        // Data array access
+                        if(cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) begin
+                            case(addr[`OFF])
+                                0: begin
+                                    m__data_out <= {data_3, data_2, data_1, i__data};
+                                end
+                                1: begin
+                                    m__data_out <= {data_3, data_2, i__data, data_0};
+                                end
+                                2: begin
+                                    m__data_out <= {data_3, i__data, data_1, data_0};
+                                end
+                                3: begin
+                                    m__data_out <= {i__data, data_2, data_1, data_0};
+                                end
+                            endcase
+
+                            // Update Cache
+                            cache__valid[idx] <= 0;
+                        end
+                        else begin
+                            case(addr[`OFF])
+                                0: begin
+                                    m__data_out <= {data_3, data_2, data_1, i__data};
+                                end
+                                1: begin
+                                    m__data_out <= {data_3, data_2, i__data, data_0};
+                                end
+                                2: begin
+                                    m__data_out <= {data_3, i__data, data_1, data_0};
+                                end
+                                3: begin
+                                    m__data_out <= {i__data, data_2, data_1, data_0};
+                                end
+                            endcase
+                            // Update Cache
+                            cache__valid[2 + idx] <= 0;
+                        end
+                        // Cache access ended
+                        c__state <= `STATE_READY_PARALLEL;
+                    end
                 end
                 else begin // When cache miss occurs
-                    // Write to memory (no allocate)
-                    // CPU stall until we finish the writing.
-                    m__write_m <= 1;
-                    m__addr <= addr; // not aligned address
-                    m__size <= `WORD_SIZE;
-                    m__data_out <= {`W_Q_EXTEND'b0, i__data};
+                    if (from_write_parallel) begin
+                        // Write to memory (no allocate)
+                        // CPU stall until we finish the writing.
+                        m__write_m <= 1;
+                        m__addr <= next_writing_addr; // not aligned address
+                        m__size <= `WORD_SIZE;
+                        m__data_out <= {`W_Q_EXTEND'b0, next_writing_data};
+                    end
+                    else begin
+                        // Write to memory (no allocate)
+                        // CPU stall until we finish the writing.
+                        m__write_m <= 1;
+                        m__addr <= addr; // not aligned address
+                        m__size <= `WORD_SIZE;
+                        m__data_out <= {`W_Q_EXTEND'b0, i__data};
+                    end
 
                     c__state <= `STATE_MEM_WR;
                 end
             end // STATE_WRITE
+            else if (c__state == `STATE_READY_PARALLEL) begin
+                // Observe if memory write is finished
+                if (m__ack) begin
+                    m__write_m <= 0;
+                    c__state <= `STATE_READY;
+                end
+            end else if (c__state == `STATE_READ_PARALLEL) begin
+                // Observe if memory write is finished
+                if (m__ack) begin
+                    m__write_m <= 0;
+                    c__state <= `STATE_READ;
+                end
+            end else if (c__state == `STATE_WRITE_PARALLEL) begin
+                if (m__ack) begin
+                    m__write_m <= 0;
+                    c__state <= `STATE_WRITE;
+                    from_write_parallel <= 1;
+                end
+            end
         end
     end // sequential logic ends
 
