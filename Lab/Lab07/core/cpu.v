@@ -409,10 +409,12 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     );
 
     forwarding_unit Forwarding_BC_Unit(
+        .EXMEM_Valid(rc__id_ex__valid),
         .EXMEM_RegWrite(rc__id_ex__reg_write),
         .EXMEM_RegWriteDest(rc__id_ex__reg_write_dest),
         .EXMEM_RD(r__id_ex__rd),
         .EXMEM_RT(r__id_ex__rt),
+        .MEMWB_Valid(rc__ex_mem__valid),
         .MEMWB_RegWrite(rc__ex_mem__reg_write),
         .MEMWB_RegWriteDest(rc__ex_mem__reg_write_dest),
         .MEMWB_RD(r__ex_mem__rd),
@@ -467,7 +469,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
         .read2(r__if_id__inst[`RT]),
         .dest(w__write_reg),
         .write_data(w__mux__write_data),
-        .reg_write(rc__mem_wb__reg_write),
+        .reg_write(rc__mem_wb__valid & rc__mem_wb__reg_write),
         .clk(clk),
         .reset_n(reset_n),
         .read_out1(w__read_data_1),
@@ -524,10 +526,12 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     ////////////// EX ////////////////
 
     forwarding_unit Forwarding_Unit(
+        .EXMEM_Valid(rc__ex_mem__valid),
         .EXMEM_RegWrite(rc__ex_mem__reg_write),
         .EXMEM_RegWriteDest(rc__ex_mem__reg_write_dest),
         .EXMEM_RD(r__ex_mem__rd),
         .EXMEM_RT(r__ex_mem__rt),
+        .MEMWB_Valid(rc__mem_wb__valid),
         .MEMWB_RegWrite(rc__mem_wb__reg_write),
         .MEMWB_RegWriteDest(rc__mem_wb__reg_write_dest),
         .MEMWB_RD(r__mem_wb__rd),
@@ -641,6 +645,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
     );	
 
     reg haz;
+    reg mem_stall;
 
     always @(posedge clk) begin
         if(!is_intrpt) begin
@@ -667,10 +672,12 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
             rc__mem_wb__valid <= rc__ex_mem__valid;
             rc__mem_wb__hdu_is_stall <= rc__ex_mem__hdu_is_stall;
 
-            if (w__d_cache_ready == 0 && ((~is_granted && rc__ex_mem__mem_write) || ~w__d_cache__hit)) begin
+            if (w__d_cache_ready == 0 && ((~is_granted && rc__ex_mem__mem_write) || (is_granted && ~w__d_cache__hit))) begin
                 rc__mem_wb__reg_write <= 1'b0;
                 rc__mem_wb__valid <= 1'b0;
+                mem_stall <= 1;
             end else begin
+                mem_stall <= 0;
                 // - EX/MEM
                 if (rc__ex_mem__valid == 1'b1) begin
                     r__num_inst <= r__num_inst + 1;
@@ -734,7 +741,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
                         rc__if_id__valid <= 1'b0;
                         r__if_id__inst <= `NOP;
                     end else begin
-                        if ((w__ack_inst || w__i_cache__hit) && !c__hdu_is_stall) begin
+                        if ((w__i_cache_ready || w__i_cache__hit) && !c__hdu_is_stall) begin
                             rc__if_id__valid <= 1'b1;
                             r__if_id__inst <= w__inst;
                             r__if_id__pc <= r__pc;
@@ -808,13 +815,17 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
             dmac_req = 0;
         end
         
-        if (r__if_id__inst !== `NOP && !haz) begin
-            if (r__is_flush) begin
-                rc__if_id__valid = 1'b0;
-                r__if_id__inst = `NOP;
-            end
-            else begin
-                r__if_id__inst = w__inst;
+        if (~mem_stall) begin
+            if (!(w__ready_inst == 0 || first)) begin
+                if (r__if_id__inst !== `NOP && !haz) begin
+                    if (r__is_flush) begin
+                        rc__if_id__valid = 1'b0;
+                        r__if_id__inst = `NOP;
+                    end
+                    else begin
+                        r__if_id__inst = w__inst;
+                    end
+                end
             end
         end
         if (w__data !== `WORD_SIZE'bX && w__data !== `WORD_SIZE'bZ)
