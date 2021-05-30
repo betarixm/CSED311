@@ -56,7 +56,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     wire idx;
     assign idx = addr[`IDX];
     assign c__ready = (c__state == `STATE_READY || c__state == `STATE_READY_PARALLEL);
-    assign m__data = (c__state == `STATE_WRITE || c__state == `STATE_MEM_WR || c__state == `STATE_READY_PARALLEL) ? m__data_out : `QWORD_SIZE'bz;
+    assign m__data = (c__state == `STATE_WRITE || c__state == `STATE_MEM_WR || c__state == `STATE_WRITE_PARALLEL || c__state == `STATE_READY_PARALLEL) ? m__data_out : `QWORD_SIZE'bz;
 
     assign data_0 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 1 - 1:`WORD_SIZE * 0] : cache__data[idx + 2][`WORD_SIZE * 1 - 1:`WORD_SIZE * 0];
     assign data_1 = (cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) ? cache__data[idx][`WORD_SIZE * 2 - 1:`WORD_SIZE * 1] : cache__data[idx + 2][`WORD_SIZE * 2 - 1:`WORD_SIZE * 1];
