@@ -656,7 +656,7 @@ module cpu(clk, reset_n, read_m1, address1, qdata1, read_m2, write_m2, write_q2,
             r__mem_wb__rt <= r__ex_mem__rt;
             r__mem_wb__read_data_1 <= r__ex_mem__read_data_1;
             r__mem_wb__next_pc <= r__ex_mem__next_pc;
-            r__mem_wb__memory_read_data = w__data;
+            r__mem_wb__memory_read_data <= w__data;
             rc__mem_wb__wwd <= rc__ex_mem__wwd;
             rc__mem_wb__halt <= rc__ex_mem__halt;
             rc__mem_wb__mem_read <= rc__ex_mem__mem_read;

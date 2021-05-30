@@ -44,7 +44,7 @@ module DMA_controller(clk, reset_n, addr, data, br, bg, c__dmac_req, addr_offset
 
     always @(*) begin
 	    if(is_working && bg) begin
-            c__write <= 1;
+            c__write = 1;
         end
     end
 
