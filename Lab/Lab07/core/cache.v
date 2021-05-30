@@ -40,6 +40,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
     reg from_write_parallel;
     
     output reg is_hit;
+    reg r__data_out_updated;
     reg [2:0] c__state;
 
     reg                   cache__valid[3:0];
@@ -77,6 +78,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
         reading_addr = 0;
         c__state = `STATE_READY;
         from_write_parallel = 0;
+        r__data_out_updated = 0;
     end
 
     // Combinational Logic
@@ -213,7 +215,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                         m__addr <= {next_writing_addr[`WORD_SIZE-1:2], 2'b00}; // aligned next_writing_address
                         m__size <= `QWORD_SIZE;
                         // Data array access
-                        if(cache__valid[next_writing_addr[`IDX]] && (cache__tag[next_writing_addr[`IDX]] == next_writing_addr[`TAG])) begin
+                        if((r__data_out_updated == 0) && cache__valid[next_writing_addr[`IDX]] && (cache__tag[next_writing_addr[`IDX]] == next_writing_addr[`TAG])) begin
                             case(next_writing_addr[`OFF])
                                 0: begin
                                     m__data_out <= {data_3, data_2, data_1, next_writing_data};
@@ -231,28 +233,33 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
 
                             // Update Cache
                             cache__valid[next_writing_addr[`IDX]] <= 0;
+                            r__data_out_updated <= 1;
                         end else begin
-                            case(next_writing_addr[`OFF])
-                                0: begin
-                                    m__data_out <= {data_3, data_2, data_1, next_writing_data};
-                                end
-                                1: begin
-                                    m__data_out <= {data_3, data_2, next_writing_data, data_0};
-                                end
-                                2: begin
-                                    m__data_out <= {data_3, next_writing_data, data_1, data_0};
-                                end
-                                3: begin
-                                    m__data_out <= {next_writing_data, data_2, data_1, data_0};
-                                end
-                            endcase
-                            // Update Cache
-                            cache__valid[2 + next_writing_addr[`IDX]] <= 0;
+                            if (r__data_out_updated == 0) begin
+                                case(next_writing_addr[`OFF])
+                                    0: begin
+                                        m__data_out <= {data_3, data_2, data_1, next_writing_data};
+                                    end
+                                    1: begin
+                                        m__data_out <= {data_3, data_2, next_writing_data, data_0};
+                                    end
+                                    2: begin
+                                        m__data_out <= {data_3, next_writing_data, data_1, data_0};
+                                    end
+                                    3: begin
+                                        m__data_out <= {next_writing_data, data_2, data_1, data_0};
+                                    end
+                                endcase
+                                // Update Cache
+                                cache__valid[2 + next_writing_addr[`IDX]] <= 0;
+                                r__data_out_updated <= 1;
+                            end
                         end
                         // Cache access ended
-                        if(is_granted) begin
-                            c__state <= `STATE_READY_PARALLEL;
-                        end
+                    if(is_granted) begin
+                        c__state <= `STATE_READY_PARALLEL;
+                        r__data_out_updated <= 0;
+                    end
                     end
                     else begin
                         // Write to memory
@@ -262,7 +269,7 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                         m__addr <= {addr[`WORD_SIZE-1:2], 2'b00}; // aligned address
                         m__size <= `QWORD_SIZE;
                         // Data array access
-                        if(cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) begin
+                        if((r__data_out_updated == 0) && cache__valid[idx] && (cache__tag[idx] == addr[`TAG])) begin
                             case(addr[`OFF])
                                 0: begin
                                     m__data_out <= {data_3, data_2, data_1, i__data};
@@ -277,31 +284,36 @@ module cache(c__read_m, c__write_m, addr, i__data, o__data, c__ready, m__read_m,
                                     m__data_out <= {i__data, data_2, data_1, data_0};
                                 end
                             endcase
+                            r__data_out_updated <= 1;
                             // Update Cache
                             cache__valid[idx] <= 0;
                         end
                         else begin
-                            case(addr[`OFF])
-                                0: begin
-                                    m__data_out <= {data_3, data_2, data_1, i__data};
-                                end
-                                1: begin
-                                    m__data_out <= {data_3, data_2, i__data, data_0};
-                                end
-                                2: begin
-                                    m__data_out <= {data_3, i__data, data_1, data_0};
-                                end
-                                3: begin
-                                    m__data_out <= {i__data, data_2, data_1, data_0};
-                                end
-                            endcase
-                            // Update Cache
-                            cache__valid[2 + idx] <= 0;
+                            if(r__data_out_updated == 0) begin
+                                case(addr[`OFF])
+                                    0: begin
+                                        m__data_out <= {data_3, data_2, data_1, i__data};
+                                    end
+                                    1: begin
+                                        m__data_out <= {data_3, data_2, i__data, data_0};
+                                    end
+                                    2: begin
+                                        m__data_out <= {data_3, i__data, data_1, data_0};
+                                    end
+                                    3: begin
+                                        m__data_out <= {i__data, data_2, data_1, data_0};
+                                    end
+                                endcase
+                                // Update Cache
+                                cache__valid[2 + idx] <= 0;
+                                r__data_out_updated <= 1;
+                            end
                         end
                     end
                     // Cache access ended
                     if(is_granted) begin
                         c__state <= `STATE_READY_PARALLEL;
+                        r__data_out_updated <= 0;
                     end
                 end
                 else begin // When cache miss occurs
