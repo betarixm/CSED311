@@ -23,3 +23,9 @@ Simple vending machine FSM implementation with Verilog.
 ### Pipeline CPU
 ![datapath](Lab/Lab05/report/datapath.png)
 [Link](Lab/Lab05)
+
+### Cache
+[Link](Lab/Lab06)
+
+### DMA
+[Link](Lab/Lab07)
